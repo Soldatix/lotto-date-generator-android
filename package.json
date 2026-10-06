@@ -1,7 +1,7 @@
 {
   "name": "lotto-date-generator",
   "version": "1.0.0",
-  "description": "Standalone browser application for generating deterministic lottery combinations from a selected date.",
+  "description": "Date Lotto Generator for Android. Generate deterministic lotto combinations from any selected date.",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -15,10 +15,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Soldatix/lotto-date-generator.git"
+    "url": "git+https://github.com/Soldatix/lotto-date-generator-android.git"
   },
   "bugs": {
-    "url": "https://github.com/Soldatix/lotto-date-generator/issues"
+    "url": "https://github.com/Soldatix/lotto-date-generator-android/issues"
   },
   "devDependencies": {
     "@tauri-apps/cli": "2.12.0",
