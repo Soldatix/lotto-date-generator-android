@@ -199,7 +199,7 @@ test('all five languages have every UI, confirmation and status message', () => 
   const f = fixture();
   const translations = vm.runInContext('BACKUP_T', f.context);
   const keys = Object.keys(translations.en);
-  assert.equal(keys.length, 12);
+  assert.equal(keys.length, 14);
   for (const lang of ['en', 'hr', 'de', 'it', 'es']) {
     assert.deepEqual(Object.keys(translations[lang]), keys);
     for (const key of keys) assert.ok(translations[lang][key].trim());

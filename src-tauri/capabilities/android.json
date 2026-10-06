@@ -1,0 +1,22 @@
+{
+  "identifier": "android-native-integration",
+  "description": "Android main window native backup and approved external links",
+  "windows": ["main"],
+  "platforms": ["android"],
+  "permissions": [
+    "core:default",
+    "dialog:allow-open",
+    "dialog:allow-save",
+    "dialog:allow-message",
+    "fs:allow-read-text-file",
+    "fs:allow-write-text-file",
+    {
+      "identifier": "opener:allow-open-url",
+      "allow": [
+        { "url": "https://appsandgames.org/" },
+        { "url": "https://www.paypal.com/ncp/payment/RU2CWCNVQ7XD6" },
+        { "url": "https://buy.stripe.com/7sYeVd7Blfe89cm0k02kw00" }
+      ]
+    }
+  ]
+}
