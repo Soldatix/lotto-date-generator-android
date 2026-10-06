@@ -1,8 +1,12 @@
 {
   "identifier": "android-native-integration",
   "description": "Android main window native backup and approved external links",
-  "windows": ["main"],
-  "platforms": ["android"],
+  "windows": [
+    "main"
+  ],
+  "platforms": [
+    "android"
+  ],
   "permissions": [
     "core:default",
     "dialog:allow-open",
@@ -13,9 +17,18 @@
     {
       "identifier": "opener:allow-open-url",
       "allow": [
-        { "url": "https://appsandgames.org/" },
-        { "url": "https://www.paypal.com/ncp/payment/RU2CWCNVQ7XD6" },
-        { "url": "https://buy.stripe.com/7sYeVd7Blfe89cm0k02kw00" }
+        {
+          "url": "https://appsandgames.org/"
+        },
+        {
+          "url": "https://appsandgames.org/date-lotto-generator"
+        },
+        {
+          "url": "https://www.paypal.com/ncp/payment/RU2CWCNVQ7XD6"
+        },
+        {
+          "url": "https://buy.stripe.com/7sYeVd7Blfe89cm0k02kw00"
+        }
       ]
     }
   ]

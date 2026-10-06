@@ -131,6 +131,16 @@
         <input type="file" id="backupFile" accept=".json,application/json" hidden aria-labelledby="importBackup">
         <p id="backupStatus" class="hint" role="status" aria-live="polite" aria-atomic="true"></p>
       </section>
+      <section id="updateSection" class="settings-box" aria-labelledby="settingsUpdateTitle" hidden>
+        <h3 id="settingsUpdateTitle">Updates</h3>
+        <p id="settingsUpdateDescription">Check whether a newer Android version is available.</p>
+        <p class="hint"><span id="settingsUpdateInstalledLabel">Installed version</span>: <span id="settingsUpdateVersion"></span></p>
+        <div class="settings-actions">
+          <button type="button" class="btn secondary" id="checkForUpdates">Check for updates</button>
+          <a class="btn secondary" id="downloadUpdate" href="https://appsandgames.org/date-lotto-generator" target="_blank" rel="noopener noreferrer" hidden>Download update</a>
+        </div>
+        <p id="updateStatus" class="hint" role="status" aria-live="polite" aria-atomic="true"></p>
+      </section>
       <section class="settings-box settings-danger" aria-labelledby="settingsDangerTitle">
         <h3 id="settingsDangerTitle" data-settings-i18n="dangerTitle">Danger zone</h3>
         <p data-settings-i18n="dangerDescription">Deleting removes saved lotto combinations, language and theme from this app. The action cannot be undone without a previous backup.</p>

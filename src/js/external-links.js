@@ -2,6 +2,7 @@ import { openUrl } from '@tauri-apps/plugin-opener';
 
 const allowedUrls = new Set([
   'https://appsandgames.org/',
+  'https://appsandgames.org/date-lotto-generator',
   'https://www.paypal.com/ncp/payment/RU2CWCNVQ7XD6',
   'https://buy.stripe.com/7sYeVd7Blfe89cm0k02kw00'
 ]);

@@ -31,12 +31,12 @@ test('Android SDK baseline remains API 37 / minSdk 24', () => {
   assert.match(gradle, /minSdk\s*=\s*24/);
 });
 
-test('Android package identity and v1 version remain stable', () => {
+test('Android package identity and v1.0.1 version remain stable', () => {
   assert.equal(
     tauri.identifier,
     'org.appsandgames.datelottogenerator'
   );
-  assert.equal(tauri.version, '1.0.0');
+  assert.equal(tauri.version, '1.0.1');
   assert.equal(tauri.bundle.android.minSdkVersion, 24);
 });
 

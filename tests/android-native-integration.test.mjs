@@ -32,6 +32,7 @@ test('Android backup accepts picker-returned Android content URI locations', () 
 test('external links use native opener and only approved URLs', () => {
   const expected = [
     'https://appsandgames.org/',
+        'https://appsandgames.org/date-lotto-generator',
     'https://www.paypal.com/ncp/payment/RU2CWCNVQ7XD6',
     'https://buy.stripe.com/7sYeVd7Blfe89cm0k02kw00'
   ];

@@ -92,6 +92,64 @@ export const SETTINGS_T = {
   }
 };
 
+export const UPDATE_T = {
+  en: {
+    title: 'Updates',
+    description: 'Check whether a newer Android version is available.',
+    installed: 'Installed version',
+    check: 'Check for updates',
+    checking: 'Checking for updates…',
+    upToDate: 'You are using the latest version.',
+    available: 'Version {version} is available.',
+    download: 'Download update',
+    failed: 'Could not check for updates. Check your internet connection and try again.'
+  },
+  hr: {
+    title: 'Ažuriranja',
+    description: 'Provjerite je li dostupna novija Android verzija.',
+    installed: 'Instalirana verzija',
+    check: 'Provjeri ažuriranja',
+    checking: 'Provjera ažuriranja…',
+    upToDate: 'Koristite najnoviju verziju.',
+    available: 'Dostupna je verzija {version}.',
+    download: 'Preuzmi ažuriranje',
+    failed: 'Provjera ažuriranja nije uspjela. Provjerite internetsku vezu i pokušajte ponovno.'
+  },
+  de: {
+    title: 'Updates',
+    description: 'Prüfen Sie, ob eine neuere Android-Version verfügbar ist.',
+    installed: 'Installierte Version',
+    check: 'Nach Updates suchen',
+    checking: 'Updates werden gesucht…',
+    upToDate: 'Sie verwenden die neueste Version.',
+    available: 'Version {version} ist verfügbar.',
+    download: 'Update herunterladen',
+    failed: 'Die Update-Prüfung ist fehlgeschlagen. Prüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.'
+  },
+  it: {
+    title: 'Aggiornamenti',
+    description: 'Controlla se è disponibile una versione Android più recente.',
+    installed: 'Versione installata',
+    check: 'Controlla aggiornamenti',
+    checking: 'Controllo aggiornamenti…',
+    upToDate: 'Stai usando la versione più recente.',
+    available: 'È disponibile la versione {version}.',
+    download: 'Scarica aggiornamento',
+    failed: 'Impossibile controllare gli aggiornamenti. Verifica la connessione Internet e riprova.'
+  },
+  es: {
+    title: 'Actualizaciones',
+    description: 'Comprueba si hay disponible una versión más reciente para Android.',
+    installed: 'Versión instalada',
+    check: 'Buscar actualizaciones',
+    checking: 'Buscando actualizaciones…',
+    upToDate: 'Estás usando la versión más reciente.',
+    available: 'La versión {version} está disponible.',
+    download: 'Descargar actualización',
+    failed: 'No se pudieron comprobar las actualizaciones. Comprueba tu conexión a Internet e inténtalo de nuevo.'
+  }
+};
+
 export const INFO_T={
  en:{about:"About the app",description:"Generate repeatable lotto combinations from a date, settings and an optional Personal Key.",features:"Features",featureList:"Lotto presets and custom number ranges; copy combinations; save and delete History; light, dark and system themes; five languages.",version:"Version",free:"Free application",privacy:"Privacy & local storage",localData:"Your app data stays locally in your browser. This app uses localStorage to remember:",historyData:"History: combinations you save, including the date, settings, numbers and Personal Key.",themeData:"Theme: your light, dark or system preference.",languageData:"Language: your selected interface language.",personalKey:"When you click Save, the Personal Key used to generate that combination is saved with it in localStorage. The Personal Key is not a password or a security secret.",brandText:"An Apps & Games application.",visit:"Visit Apps & Games ↗",support:"Support / Donations",title:'Information / Donations',subtitle:'Support charity & open-source software',charity:'Charity purpose',p1:"Donations are voluntary. The application is free and remains free, whether or not you donate.",p2:'A part of the received donations will be forwarded to various charitable organizations, the largest part will be donated to institutions caring for children without adequate parental care.',direct:'Direct online payments',paypal:'Donate with PayPal ↗',stripe:'Donate with Stripe ↗',paypalDesc:'Pay securely with PayPal or other payment options offered by PayPal Checkout.',stripeDesc:'Pay securely by card or with payment methods available through Stripe Checkout.',cards:'Debit / Credit Card',digitalWallets:'Digital wallets',availability:'Available payment methods can vary by country, device and payment provider.',crypto:'Crypto wallets',copy:'Copy',copied:'Copied!',copyFailed:'Copy failed',linkFailed:'Could not open the link. Please try again.',close:'Close',note:'Please verify the wallet address before sending a transaction. Crypto transfers cannot be reversed.'},
  hr:{about:"O aplikaciji",description:"Generirajte ponovljive loto kombinacije iz datuma, postavki i opcionalnog osobnog ključa.",features:"Glavne funkcije",featureList:"Loto predlošci i prilagođeni rasponi brojeva; kopiranje kombinacija; spremanje i brisanje povijesti; svijetla, tamna i sistemska tema; pet jezika.",version:"Verzija",free:"Besplatna aplikacija",privacy:"Privatnost i lokalna pohrana",localData:"Vaši podaci iz aplikacije ostaju lokalno u vašem pregledniku. Aplikacija koristi localStorage za pamćenje:",historyData:"Povijest: spremljene kombinacije, uključujući datum, postavke, brojeve i osobni ključ.",themeData:"Tema: vaš odabir svijetle, tamne ili sistemske teme.",languageData:"Jezik: odabrani jezik sučelja.",personalKey:"Klikom na Spremi, osobni ključ (Personal Key) korišten za generiranje te kombinacije sprema se uz nju u localStorage. Osobni ključ nije lozinka ni sigurnosna tajna.",brandText:"Aplikacija Apps & Games.",visit:"Posjetite Apps & Games ↗",support:"Podrška / Donacije",title:'Informacije / Donacije',subtitle:'Podržite humanitarne svrhe i besplatni softver',charity:'Humanitarna svrha',p1:"Donacije su dobrovoljne. Aplikacija je besplatna i ostaje besplatna, neovisno o tome donirate li.",p2:'Dio primljenih donacija bit će proslijeđen raznim humanitarnim organizacijama, a najveći dio bit će doniran ustanovama koje skrbe o djeci bez adekvatne roditeljske skrbi.',direct:'Izravna online plaćanja',paypal:'Doniraj putem PayPala ↗',stripe:'Doniraj putem Stripea ↗',paypalDesc:'Platite sigurno putem PayPala ili drugim načinima plaćanja koje nudi PayPal Checkout.',stripeDesc:'Platite sigurno karticom ili načinima plaćanja dostupnima putem Stripe Checkouta.',cards:'Debitna / kreditna kartica',digitalWallets:'Digitalni novčanici',availability:'Dostupni načini plaćanja mogu se razlikovati ovisno o državi, uređaju i pružatelju plaćanja.',crypto:'Kripto novčanici',copy:'Kopiraj',copied:'Kopirano!',copyFailed:'Kopiranje nije uspjelo',linkFailed:'Poveznica se nije mogla otvoriti. Pokušajte ponovno.',close:'Zatvori',note:'Prije slanja transakcije provjerite adresu novčanika. Kripto transakcije nije moguće poništiti.'},

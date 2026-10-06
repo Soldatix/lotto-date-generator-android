@@ -10,27 +10,34 @@ import { createLiveStatus } from './js/accessibility.js';
 import { createClipboardHandlers } from './js/clipboard.js';
 import { createInfoModalHandlers } from './js/info-modal.js';
 import { initializeExternalLinks } from './js/external-links.js';
+import { createUpdateChecker } from './js/update-check.js';
 import { createSettingsModalHandlers } from './js/settings-modal.js';
 import { applyTheme, selectTheme } from './js/theme.js';
 import { createBackupHandlers, createResetHandler } from './js/backup.js';
 import { toggleFullscreen } from './js/fullscreen.js';
 import { presets } from './data/presets.js';
-import { T, WEB_INSTALL_T } from './data/translations.js';
+import { T, WEB_INSTALL_T, UPDATE_T } from './data/translations.js';
 import { hash32, mulberry32, uniqueNums, todayDMY, parseDMY, displayDate } from './js/generator.js';
 
 const $=id=>document.getElementById(id); let currentPreset='6'; let lastResult=null;
+const isNativeRuntime=()=>window.location?.hostname==='tauri.localhost'||typeof window.__TAURI_INTERNALS__!=='undefined';
 enhanceLanguageMenus();
 const webInstall = initializeWebInstall({ $, getText: () => WEB_INSTALL_T[$('language').value] || WEB_INSTALL_T.en });
 $('infoVersion').textContent=version;
 const announce=createLiveStatus({ $ });
 const { infoTr, applyInfoLanguage, openInfo, closeInfo, handleInfoOverlayClick, handleInfoKeydown }=createInfoModalHandlers({ $ });
 const { applySettingsLanguage, openSettings, closeSettings, handleSettingsOverlayClick, handleSettingsKeydown }=createSettingsModalHandlers({ $ });
-initializeExternalLinks({
-  container: $('infoOverlay'),
-  isNative: () => window.location?.hostname === 'tauri.localhost' ||
-    typeof window.__TAURI_INTERNALS__ !== 'undefined',
-  onError: () => alert(infoTr('linkFailed'))
+const updateChecker=createUpdateChecker({
+  $,
+  currentVersion:version,
+  getText:()=>UPDATE_T[$('language').value]||UPDATE_T.en,
+  isNative:isNativeRuntime
 });
+[$('infoOverlay'),$('settingsOverlay')].forEach(container=>initializeExternalLinks({
+  container,
+  isNative:isNativeRuntime,
+  onError:()=>alert(infoTr('linkFailed'))
+}));
 const { copyResult, copyHistory, copyWallet }=createClipboardHandlers({ $, getLastResult:()=>lastResult, resultString, tr, infoTr, announce });
 const { exportBackup, importBackup }=createBackupHandlers({ $, tr: infoTr, onRestore(data){$('language').value=data.language;applyTheme();applyLanguage(false)} });
 $('exportBackup').onclick=exportBackup;
@@ -47,7 +54,7 @@ function renderResult(){const r=lastResult;if(!r)return;const balls=r.main.map(n
 function saveResult(){if(!lastResult)return;const saved=addHistory(lastResult);$('saveBtn').textContent=tr(saved?'saved':'save');announce(tr(saved?'saved':'saveFailed'));renderHistory()}
 function deleteHistoryEntry(history,index){if(!deleteHistory(history,index))announce(tr('deleteFailed'));renderHistory()}
 function renderHistory(){const h=getHistory();$('historyWrap').hidden=!h.length;const w=$('historyList');w.innerHTML='';h.forEach((r,i)=>{const row=document.createElement('div');row.className='histItem';row.innerHTML=`<div class="histText" title="${resultString(r)}">${resultString(r)}</div><div><button class="btn mini" data-copy="${i}">${tr('copy')}</button> <button class="btn mini" data-del="${i}">${tr('delete')}</button></div>`;w.appendChild(row)});w.querySelectorAll('[data-copy]').forEach(b=>b.onclick=()=>copyHistory(h[+b.dataset.copy],b));w.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>deleteHistoryEntry(h,+b.dataset.del))}
-function applyLanguage(persist=true){announce.clear();document.documentElement.lang=$('language').value;document.querySelectorAll('[data-i18n]').forEach(el=>el.textContent=tr(el.dataset.i18n));document.querySelectorAll('[data-i18n-name]').forEach(el=>{const name=tr(el.dataset.i18nName);el.setAttribute('aria-label',name);el.title=name});document.querySelectorAll('[data-i18n-placeholder]').forEach(el=>el.placeholder=tr(el.dataset.i18nPlaceholder));renderPresets();if(lastResult)renderResult();renderHistory();applyInfoLanguage();applySettingsLanguage();webInstall.applyLanguage();if(persist)setLanguage($('language').value)}
+function applyLanguage(persist=true){announce.clear();document.documentElement.lang=$('language').value;document.querySelectorAll('[data-i18n]').forEach(el=>el.textContent=tr(el.dataset.i18n));document.querySelectorAll('[data-i18n-name]').forEach(el=>{const name=tr(el.dataset.i18nName);el.setAttribute('aria-label',name);el.title=name});document.querySelectorAll('[data-i18n-placeholder]').forEach(el=>el.placeholder=tr(el.dataset.i18nPlaceholder));renderPresets();if(lastResult)renderResult();renderHistory();applyInfoLanguage();applySettingsLanguage();if(typeof updateChecker!=='undefined')updateChecker.applyLanguage();webInstall.applyLanguage();if(persist)setLanguage($('language').value)}
 function reset(){announce.clear();selectPreset('6');$('salt').value='';$('dateInput').value='';lastResult=null;$('resultArea').className='empty';$('resultArea').innerHTML=`<div class="big">🎱</div><p data-i18n="empty">${tr('empty')}</p>`}
 
 $('settingsBtn').onclick=()=>{closeInfo();openSettings()};$('settingsX').onclick=closeSettings;$('settingsClose').onclick=closeSettings;$('settingsOverlay').addEventListener('click',handleSettingsOverlayClick);document.addEventListener('keydown',handleSettingsKeydown);

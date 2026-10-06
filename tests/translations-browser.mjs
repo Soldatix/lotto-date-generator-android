@@ -14,6 +14,14 @@ const expected = {
   it: ['Scegli una data e genera la combinazione.', 'es. nome, città, parola fortunata', 'Chiudi', 'Apps & Games • Dati locali • Uso gratuito'],
   es: ['Elige una fecha y genera tu combinación.', 'p. ej., nombre, ciudad, palabra de la suerte', 'Cerrar', 'Apps & Games • Datos locales • Uso gratuito']
 };
+const languageMenuLabels = {
+  en: 'Language',
+  hr: 'Jezik',
+  de: 'Sprache',
+  it: 'Lingua',
+  es: 'Idioma'
+};
+
 let server, browser;
 before(async () => {
   server = await createServer({ server: { host: '127.0.0.1', port: 0 } });
@@ -45,6 +53,20 @@ for (const [lang, [empty, placeholder, close, footer]] of Object.entries(expecte
     assert.equal(await page.getAttribute('#infoX', 'aria-label'), close);
     assert.equal(await page.getAttribute('#infoX', 'title'), close);
     assert.equal(await page.locator('.footer').textContent(), footer);
+    assert.equal(
+      await page.getAttribute(
+        '.ag-language-button',
+        'aria-label'
+      ),
+      languageMenuLabels[lang]
+    );
+    assert.equal(
+      await page.getAttribute(
+        '.ag-language-options',
+        'aria-label'
+      ),
+      languageMenuLabels[lang]
+    );
     assert.ok(!(await page.locator('body').innerText()).includes('Standalone HTML'));
     await page.click('#infoBtn');
     assert.equal(await page.locator('#infoX').textContent(), '×');

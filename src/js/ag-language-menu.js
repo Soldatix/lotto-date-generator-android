@@ -138,6 +138,10 @@ function enhanceSelect(select) {
 
   function updateDisplay() {
     const current = languages.find((item) => item.value === select.value) || languages[0];
+    const accessibleName =
+      select.getAttribute('aria-label') || 'Language';
+    button.setAttribute('aria-label', accessibleName);
+    options.setAttribute('aria-label', accessibleName);
     button.innerHTML = markup(current) + '<span class="ag-language-chevron" aria-hidden="true">▼</span>';
     items().forEach((item) => {
       const selected = item.dataset.language === current.value;
