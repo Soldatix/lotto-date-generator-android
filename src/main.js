@@ -1,4 +1,5 @@
 import { version } from '../package.json';
+import { initializeLevelPlayPreview } from './js/levelplay-pilot.js';
 import { initializePwaTitle, initializeWebInstall, registerPwa } from './js/pwa.js';
 import { enhanceLanguageMenus } from './js/ag-language-menu.js';
 
@@ -63,3 +64,6 @@ $('generateBtn').onclick=generate;$('resetBtn').onclick=reset;$('language').onch
 ['mainCount','mainMax','extraCount','extraMax'].forEach(id=>$(id).addEventListener('input',()=>{currentPreset='custom';renderPresets()}));
 $('dateInput').addEventListener('input',e=>{let v=e.target.value.replace(/\D/g,'').slice(0,8);if(v.length>4)v=v.slice(0,2)+'/'+v.slice(2,4)+'/'+v.slice(4);else if(v.length>2)v=v.slice(0,2)+'/'+v.slice(2);e.target.value=v});
 (function init(){$('language').value=getLanguage();applyTheme();$('dateInput').value='';applyLanguage();selectPreset('6');renderHistory()})();
+
+// Review-only Android Tauri banner placement; never initializes an ad SDK.
+initializeLevelPlayPreview();
