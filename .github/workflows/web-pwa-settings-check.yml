@@ -49,3 +49,4 @@ jobs:
           done
           curl --fail http://127.0.0.1:4173/ > /dev/null
           node ci/web-pwa-settings-smoke.mjs
+          node ci/levelplay-pilot-smoke.mjs
