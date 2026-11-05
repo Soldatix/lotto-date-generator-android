@@ -20,7 +20,7 @@ import android.widget.TextView
  *
  * This is NOT a consent flow, SDK initialization or advertising test.
  */
-internal class LevelPlayHostProbe(private val activity: Activity) {
+internal class NativeBannerHostProbe(private val activity: Activity) {
     companion object {
         private const val TAG = "DateLottoNativeHost"
         private const val PILOT_PACKAGE =

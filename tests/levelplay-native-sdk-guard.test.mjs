@@ -112,8 +112,8 @@ test('Tauri and Android Studio debug builds have a separate installation identit
 });
 
 test('Native 320x50 host diagnostic is explicit, debug-only and free of ad calls', () => {
-  const probe = read('src-tauri/gen/android/app/src/main/java/org/appsandgames/datelottogenerator/LevelPlayHostProbe.kt');
-  assert.match(main, /LevelPlayHostProbe\(this\)\.also \{ it\.scheduleIfRequested\(\) \}/);
+  const probe = read('src-tauri/gen/android/app/src/main/java/org/appsandgames/datelottogenerator/NativeBannerHostProbe.kt');
+  assert.match(main, /NativeBannerHostProbe\(this\)\.also \{ it\.scheduleIfRequested\(\) \}/);
   assert.match(main, /nativeHostProbe\?\.detach\(\)/);
   assert.match(probe, /activity\.packageName != PILOT_PACKAGE/);
   assert.match(probe, /ApplicationInfo\.FLAG_DEBUGGABLE/);
