@@ -47,7 +47,7 @@ function Invoke-NativeInfo([string]$exe, [string]$arguments) {
     }
 }
 
-Write-Output '=== LEVELPLAY ANDROID READ-ONLY PREFLIGHT V3 ==='
+Write-Output '=== LEVELPLAY ANDROID READ-ONLY PREFLIGHT V4 ==='
 Write-Output 'NO_ANDROID_BUILD=TRUE; NO_AD_REQUEST=TRUE; NO_APK_INSTALL=TRUE'
 
 $git = Get-CommandPath 'git'
@@ -133,7 +133,25 @@ if (-not $sdk) { $sdk = $env:ANDROID_SDK_ROOT }
 if (-not $sdk) { $sdk = Join-Path $env:LOCALAPPDATA 'Android\Sdk' }
 Write-Output ('ANDROID_SDK_DIRECTORY_FOUND=' + [bool](Test-Path -LiteralPath $sdk))
 Write-Output ('ANDROID_API_36_INSTALLED=' + [bool](Test-Path -LiteralPath (Join-Path $sdk 'platforms\android-36')))
-Write-Output ('ANDROID_API_37_INSTALLED=' + [bool](Test-Path -LiteralPath (Join-Path $sdk 'platforms\android-37')))
+# Android API 37.0 uses platforms/android-37.0, unlike older integer API
+# directory conventions. Recognize both locations, but do not assume AGP
+# compileSdk=37 will automatically select the minor-version directory.
+$sdk37Legacy = Join-Path $sdk 'platforms\android-37'
+$sdk370 = Join-Path $sdk 'platforms\android-37.0'
+$sdk37LegacyJar = Test-Path -LiteralPath (Join-Path $sdk37Legacy 'android.jar')
+$sdk370Jar = Test-Path -LiteralPath (Join-Path $sdk370 'android.jar')
+Write-Output ('ANDROID_API_37_LEGACY_FOLDER_FOUND=' + [bool](Test-Path -LiteralPath $sdk37Legacy))
+Write-Output ('ANDROID_API_37_0_FOLDER_FOUND=' + [bool](Test-Path -LiteralPath $sdk370))
+Write-Output ('ANDROID_API_37_0_ANDROID_JAR_FOUND=' + [bool]$sdk370Jar)
+Write-Output ('ANDROID_API_37_INSTALLED=' + [bool]($sdk37LegacyJar -or $sdk370Jar))
+if ($sdk370Jar -and -not $sdk37LegacyJar) {
+    Write-Output 'ANDROID_API_37_PLATFORM_LOCATION=android-37.0'
+    Write-Output 'AGP_COMPILE_SDK_37_RESOLUTION=NOT_YET_VERIFIED'
+} elseif ($sdk37LegacyJar) {
+    Write-Output 'ANDROID_API_37_PLATFORM_LOCATION=android-37'
+} else {
+    Write-Output 'ANDROID_API_37_PLATFORM_LOCATION=NOT_FOUND'
+}
 
 $adb = Get-CommandPath 'adb.exe'
 if (-not $adb) {
