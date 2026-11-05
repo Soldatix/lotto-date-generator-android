@@ -73,6 +73,11 @@ android {
 
     buildTypes {
         getByName("debug") {
+            // Tauri debugApplicationIdSuffix in tauri.conf.json is the source
+            // of truth. Explicit matching suffix protects direct Studio builds.
+            // Never modify defaultConfig.applicationId or release identity.
+            applicationIdSuffix = ".levelplaypilot"
+            versionNameSuffix = "-LevelPlayTest"
             manifestPlaceholders["usesCleartextTraffic"] = "true"
             isDebuggable = true
             isJniDebuggable = true
