@@ -149,3 +149,25 @@ html[data-theme="dark"] .settings-delete{color:#ff8da0}
     margin: 14px auto 0;
   }
 }
+
+/* V8.2 responsive Android tablet *debug preview only*. In-panel normal flow:
+   never attach a banner over system navigation or cover lotto results.
+   These selectors apply only after the isolated debug/native ADB guard sets
+   tablet-preview-active. Kotlin inserts equivalent runtime styles because
+   WebView may have stale prebundled CSS; that injection is also debug-gated. */
+@media (orientation: landscape) {
+  .resultBox.tablet-preview-active #resultArea.empty {
+    margin: clamp(12px, 2.5vh, 24px) auto clamp(8px, 2vh, 18px) !important;
+  }
+  .resultBox.tablet-preview-active .native-tablet-banner-probe {
+    margin: clamp(8px, 1.5vh, 16px) auto 0 !important;
+  }
+}
+@media (orientation: portrait) {
+  .resultBox.tablet-preview-active #resultArea.empty {
+    margin: auto !important;
+  }
+  .resultBox.tablet-preview-active .native-tablet-banner-probe {
+    margin: auto auto 0 !important;
+  }
+}

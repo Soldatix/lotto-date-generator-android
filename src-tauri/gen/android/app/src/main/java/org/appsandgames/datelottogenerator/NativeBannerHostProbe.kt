@@ -127,6 +127,30 @@ internal class NativeBannerHostProbe(private val activity: Activity) {
                     location.hostname === 'tauri.localhost')) return false;
               var panel = slot.closest('.resultBox');
               if (!panel) return false;
+              // Scoped runtime CSS is intentionally injected ONLY by the
+              // debuggable, exact pilot package + explicit ADB Intent gates.
+              // This works even if Android WebView serves stale bundled CSS.
+              // Landscape: keep banner close to results and history.
+              // Portrait: preserve the existing bottom-of-card placement.
+              var styleId = 'date-lotto-tablet-debug-responsive-v82';
+              if (!document.getElementById(styleId)) {
+                var style = document.createElement('style');
+                style.id = styleId;
+                style.textContent =
+                  '@media (orientation: landscape) {' +
+                  '.resultBox.tablet-preview-active #resultArea.empty {' +
+                  'margin:clamp(12px,2.5vh,24px) auto clamp(8px,2vh,18px) !important;}' +
+                  '.resultBox.tablet-preview-active .native-tablet-banner-probe {' +
+                  'margin:clamp(8px,1.5vh,16px) auto 0 !important;}' +
+                  '}' +
+                  '@media (orientation: portrait) {' +
+                  '.resultBox.tablet-preview-active #resultArea.empty {' +
+                  'margin:auto !important;}' +
+                  '.resultBox.tablet-preview-active .native-tablet-banner-probe {' +
+                  'margin:auto auto 0 !important;}' +
+                  '}';
+                document.head.appendChild(style);
+              }
               panel.classList.add('tablet-preview-active');
               slot.hidden = false;
               return true;

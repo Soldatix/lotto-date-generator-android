@@ -111,6 +111,59 @@ try {
   assert.ok(bounds.slot.x > bounds.first.right, 'Tablet test placement must be in the right panel');
   console.log('PASS: tablet 320x50 mock in right panel, after generated result and saved history');
 
+  // V8.2 viewport matrix. The primary guarantee is NORMAL FLOW:
+  // the banner stays below all results/history and inside the card.
+  // Landscape with enough height should show it immediately; very short
+  // screens may scroll instead of hiding interactive lottery controls.
+  for (const [width, height] of [
+    [1024,640], [1280,800], [960,600], [1100,620],
+    [800,600], [768,1024], [800,1280], [600,960]
+  ]) {
+    await page.setViewportSize({width,height});
+    await page.reload();
+    await page.evaluate(() => {
+      const slot=document.getElementById('nativeTabletBannerProbe');
+      const panel=slot.closest('.resultBox');
+      panel.classList.add('tablet-preview-active');
+      slot.hidden=false;
+    });
+    // Use the stylesheet matrix rather than only inspecting the class.
+    const box=await page.evaluate(() => {
+      const rect=(x)=>x.getBoundingClientRect();
+      const slot=document.getElementById('nativeTabletBannerProbe');
+      const panel=slot.closest('.resultBox');
+      const result=document.getElementById('resultArea');
+      const history=document.getElementById('historyWrap');
+      const a=rect(slot), b=rect(panel), r=rect(result);
+      const h=history.hidden?null:rect(history);
+      return {
+        width:a.width,height:a.height,left:a.left,right:a.right,top:a.top,bottom:a.bottom,
+        panelLeft:b.left,panelRight:b.right,panelBottom:b.bottom,
+        resultBottom:r.bottom,historyBottom:h?.bottom||null,
+        computedMarginTop:getComputedStyle(slot).marginTop,
+        visibleNoScroll:a.bottom<=innerHeight,
+        inLandscape:matchMedia('(orientation: landscape)').matches,
+        rightOfForm:a.left>document.querySelector('.grid > .card:first-child').getBoundingClientRect().right
+      };
+    });
+    assert.ok(box.width <= 321 && box.height >= 49 && box.height <= 51,
+      'Mock dimensions invalid at '+width+'x'+height);
+    assert.ok(box.left >= box.panelLeft-1 && box.right <= box.panelRight+1,
+      'Banner outside result card at '+width+'x'+height);
+    assert.ok(box.top >= box.resultBottom-1 &&
+      (box.historyBottom===null || box.top>=box.historyBottom-1),
+      'Banner overlaps results/history at '+width+'x'+height);
+    assert.ok(box.bottom <= box.panelBottom+1,
+      'Banner outside card bottom at '+width+'x'+height);
+    if(width >= 900 && height >= 600 && box.inLandscape) {
+      assert.ok(box.visibleNoScroll, 'Banner below first landscape viewport '+width+'x'+height);
+      assert.ok(box.rightOfForm, 'Banner must be in the right panel at '+width+'x'+height);
+      assert.ok(parseFloat(box.computedMarginTop)<=17,
+        'Landscape margin must not auto-expand at '+width+'x'+height);
+    }
+  }
+  console.log('PASS: V8.2 responsive tablet mock 8 viewport matrix, no result/history overlap');
+
   await androidTauri.context.close();
   console.log('PASS: tiny screens hide mock, demo consent never persisted and zero ad-network requests');
 } finally {

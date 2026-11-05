@@ -163,3 +163,24 @@ test('Landscape tablet placement class is only set by the existing debug-only We
   assert.match(css, /\.resultBox\.tablet-preview-active \.native-tablet-banner-probe/);
   assert.doesNotMatch(native, /LevelPlay\.init|loadAd\(/);
 });
+
+// The responsive rule must be injected only after native debug gates and
+// must react to orientation/viewport width without reparenting WebView.
+test('V8.2 tablet mock adapts to landscape/portrait without covering Android navigation', () => {
+  const native = read('src-tauri/gen/android/app/src/main/java/org/appsandgames/datelottogenerator/NativeBannerHostProbe.kt');
+  const css = read('src/styles/main.css');
+  assert.match(native, /date-lotto-tablet-debug-responsive-v82/);
+  assert.match(native, /document\.createElement\('style'\)/);
+  assert.match(native, /document\.head\.appendChild\(style\)/);
+  assert.match(native, /@media \(orientation: landscape\)/);
+  assert.match(native, /@media \(orientation: portrait\)/);
+  assert.match(native, /clamp\(8px,1\.5vh,16px\) auto 0 !important/);
+  assert.match(native, /margin:auto auto 0 !important/);
+  assert.match(native, /if \(activity\.packageName != PILOT_PACKAGE\) return/);
+  assert.match(native, /ApplicationInfo\.FLAG_DEBUGGABLE/);
+  assert.match(native, /getBooleanExtra\(EXTRA_ENABLE, false\)/);
+  assert.match(css, /V8\.2 responsive Android tablet/);
+  assert.match(css, /@media \(orientation: landscape\)/);
+  assert.match(css, /@media \(orientation: portrait\)/);
+  assert.doesNotMatch(native, /LevelPlay\.init|loadAd\(/);
+});

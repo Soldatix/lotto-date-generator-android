@@ -141,3 +141,30 @@ debug-only `tablet-preview-active` class on the card to move the empty-state
 result and banner upward in normal flow. A 1100x620 browser smoke checks
 visibility without scrolling and verifies that generated results/history remain
 above the mock. No ads or native positioning bridge introduced.
+
+
+## Responsive debug tablet mock V8.2 (2026-11-06)
+
+Huawei CMR-W09 CSS runtime diagnostics at 1024x640 in landscape measured
+`BANNER_MARGIN_TOP=91.3313px` and `BANNER_DOCUMENT_Y=654px` despite
+`LANDSCAPE_CSS_ACTIVE=true` and `TABLET_PREVIEW_CLASS_ACTIVE=true`.
+The page had saved-history content, and WebView was not controlled by a service
+worker. This proves that a passing browser smoke alone did not establish the
+actual WebView's CSS margin values.
+
+V8.2 uses responsive portrait/landscape styling for **all Android tablets**
+(`smallestScreenWidthDp >= 600`) in normal content flow, rather than
+hardcoding Huawei viewport dimensions. In landscape, the result placeholder
+and the 320x50px test mock receive small `clamp()` margins. In portrait,
+the existing bottom-of-card layout is preserved. This allows scrolling
+instead of overlap if generated results and saved history exceed available
+screen height. A small CSS fallback is injected at runtime **only** after
+the exact debuggable pilot package and explicit ADB extra gates, so a stale
+bundled stylesheet cannot silently restore large auto margins.
+
+CI checks 8 viewport combinations: 1024x640, 1280x800, 960x600,
+1100x620, 800x600, 768x1024, 800x1280 and 600x960, including placement
+after result/history without overlays. Native ads are still NOT embedded
+in the HTML panel; real LevelPlay SDK and ad requests remain OFF.
+**Production and release are NO_GO.** Physical verification after V8.2
+is a separate gate.
