@@ -81,13 +81,34 @@ $aapt = @(Get-ChildItem -LiteralPath $androidBuildTools -Filter 'aapt.exe' -Recu
 if ($aapt.Count -ne 1) { throw 'ANDROID_AAPT_TOOL_NOT_FOUND' }
 Write-Output ('AAPT_TOOL=' + $aapt[0].FullName)
 
+$ndkHome = $env:NDK_HOME
+if (-not $ndkHome -or -not (Test-Path -LiteralPath $ndkHome)) {
+    $ndkHome = $env:ANDROID_NDK_HOME
+}
+if (-not $ndkHome -or -not (Test-Path -LiteralPath $ndkHome)) {
+    $ndkFolder = Join-Path $sdk 'ndk'
+    if (Test-Path -LiteralPath $ndkFolder) {
+        $ndkInstalled = @(Get-ChildItem -LiteralPath $ndkFolder -Directory |
+            Sort-Object Name -Descending | Select-Object -First 1)
+        if ($ndkInstalled.Count -gt 0) {
+            $ndkHome = $ndkInstalled[0].FullName
+        }
+    }
+}
+if (-not $ndkHome -or -not (Test-Path -LiteralPath (Join-Path $ndkHome 'source.properties'))) {
+    throw 'ANDROID_NDK_NOT_FOUND'
+}
+Write-Output ('NDK_HOME_FOR_THIS_RUN=' + $ndkHome)
+
 $oldJava = $env:JAVA_HOME
 $oldAndroid = $env:ANDROID_HOME
+$oldNdk = $env:NDK_HOME
 $oldCi = $env:CI
 $started = Get-Date
 try {
     $env:JAVA_HOME = $javaRoot
     $env:ANDROID_HOME = $sdk
+    $env:NDK_HOME = $ndkHome
     $env:CI = 'true'
     Push-Location -LiteralPath $repo
     try {
@@ -106,6 +127,7 @@ try {
 } finally {
     $env:JAVA_HOME = $oldJava
     $env:ANDROID_HOME = $oldAndroid
+    $env:NDK_HOME = $oldNdk
     $env:CI = $oldCi
 }
 
