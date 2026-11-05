@@ -47,7 +47,7 @@ function Invoke-NativeInfo([string]$exe, [string]$arguments) {
     }
 }
 
-Write-Output '=== LEVELPLAY ANDROID READ-ONLY PREFLIGHT V2 ==='
+Write-Output '=== LEVELPLAY ANDROID READ-ONLY PREFLIGHT V3 ==='
 Write-Output 'NO_ANDROID_BUILD=TRUE; NO_AD_REQUEST=TRUE; NO_APK_INSTALL=TRUE'
 
 $git = Get-CommandPath 'git'
@@ -164,6 +164,71 @@ if ($adb) {
         Write-Output 'ADB_HINT=CHECK_USB_DEBUGGING_AND_RETRY'
     }
 }
+
+
+# Full Tauri Android debug build prerequisites. Checks only; no installations.
+Write-Output '=== RUST_ANDROID_TOOLCHAIN (READ ONLY) ==='
+$rustup = Get-CommandPath 'rustup.exe'
+$cargo = Get-CommandPath 'cargo.exe'
+Write-Output ('RUSTUP_FOUND=' + [bool]($rustup))
+Write-Output ('CARGO_FOUND=' + [bool]($cargo))
+if ($rustup) {
+    try {
+        $targets = Invoke-NativeInfo -exe $rustup -arguments 'target list --installed'
+        $targetLines = @($targets.Stdout -split '\r?\n' | ForEach-Object { $_.Trim() })
+        $arm64Installed = $targets.ExitCode -eq 0 -and
+            ($targetLines -contains 'aarch64-linux-android')
+        Write-Output ('RUST_TARGET_AARCH64_LINUX_ANDROID_INSTALLED=' + [bool]$arm64Installed)
+    } catch {
+        Write-Output 'RUST_TARGET_CHECK=FAILED'
+    }
+}
+
+$ndkRoot = $env:NDK_HOME
+if (-not $ndkRoot) { $ndkRoot = $env:ANDROID_NDK_HOME }
+if (-not $ndkRoot -or -not (Test-Path -LiteralPath $ndkRoot)) {
+    $ndkRoot = ''
+    $ndkParent = Join-Path $sdk 'ndk'
+    if (Test-Path -LiteralPath $ndkParent) {
+        $ndkDirs = @(Get-ChildItem -LiteralPath $ndkParent -Directory -ErrorAction SilentlyContinue |
+            Sort-Object Name -Descending)
+        if ($ndkDirs.Count -gt 0) { $ndkRoot = $ndkDirs[0].FullName }
+    }
+}
+Write-Output ('ANDROID_NDK_FOUND=' + [bool]($ndkRoot -and (Test-Path -LiteralPath $ndkRoot)))
+if ($ndkRoot -and (Test-Path -LiteralPath $ndkRoot)) {
+    $versionFile = Join-Path $ndkRoot 'source.properties'
+    if (Test-Path -LiteralPath $versionFile) {
+        $ndkVersion = Get-Content -LiteralPath $versionFile |
+            Where-Object { $_ -match '^\s*Pkg.Revision\s*=' } |
+            Select-Object -First 1
+        Write-Output ('ANDROID_NDK_' + ($ndkVersion -replace '\s+', ''))
+    }
+}
+
+$buildTools = Join-Path $sdk 'build-tools'
+$buildToolsFound = Test-Path -LiteralPath $buildTools
+Write-Output ('ANDROID_BUILD_TOOLS_FOUND=' + $buildToolsFound)
+Write-Output ('ANDROID_CMDLINE_TOOLS_FOUND=' + [bool](
+    Test-Path -LiteralPath (Join-Path $sdk 'cmdline-tools\latest\bin\sdkmanager.bat')
+))
+$gradleWrapper = Join-Path $repo 'src-tauri\gen\android\gradlew.bat'
+Write-Output ('GRADLE_WRAPPER_FOUND=' + [bool](Test-Path -LiteralPath $gradleWrapper))
+if (Test-Path -LiteralPath $gradle) {
+    $appGradle = Get-Content -LiteralPath $gradle -Raw
+    $compileMatch = [regex]::Match($appGradle, 'compileSdk\s*=\s*(\d+)')
+    $targetMatch = [regex]::Match($appGradle, 'targetSdk\s*=\s*(\d+)')
+    if ($compileMatch.Success) {
+        Write-Output ('APP_COMPILE_SDK=' + $compileMatch.Groups[1].Value)
+    }
+    if ($targetMatch.Success) {
+        Write-Output ('APP_TARGET_SDK=' + $targetMatch.Groups[1].Value)
+    }
+}
+Write-Output 'ANDROID_DEBUG_APK_NOT_BUILT=TRUE'
+Write-Output 'ANDROID_DEBUG_APK_NOT_INSTALLED=TRUE'
+Write-Output 'NO_LIVE_ADS=TRUE'
+Write-Output '=== END RUST_ANDROID_TOOLCHAIN ==='
 
 Write-Output 'ADVERTISING_ID_NOT_READ=TRUE; PRIVATE_IDS_NOT_PRINTED=TRUE'
 Write-Output 'NO_SOURCE_CHANGES=TRUE; PRODUCTION_NO_GO=TRUE'
