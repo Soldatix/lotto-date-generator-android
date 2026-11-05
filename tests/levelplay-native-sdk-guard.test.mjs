@@ -150,3 +150,16 @@ test('Native probe only reveals tablet mock with debug gates; never overlays tab
   assert.match(html, /id="nativeTabletBannerProbe"[^>]*hidden/);
   assert.match(css, /\.native-tablet-banner-probe\[hidden\] \{ display: none !important; \}/);
 });
+
+test('Landscape tablet placement class is only set by the existing debug-only WebView probe', () => {
+  const native = read('src-tauri/gen/android/app/src/main/java/org/appsandgames/datelottogenerator/NativeBannerHostProbe.kt');
+  const css = read('src/styles/main.css');
+  assert.match(native, /panel\.classList\.add\('tablet-preview-active'\)/);
+  assert.match(native, /activity\.packageName != PILOT_PACKAGE/);
+  assert.match(native, /ApplicationInfo\.FLAG_DEBUGGABLE/);
+  assert.match(native, /getBooleanExtra\(EXTRA_ENABLE, false\)/);
+  assert.match(css, /@media \(orientation: landscape\) and \(min-width: 851px\)/);
+  assert.match(css, /\.resultBox\.tablet-preview-active #resultArea\.empty/);
+  assert.match(css, /\.resultBox\.tablet-preview-active \.native-tablet-banner-probe/);
+  assert.doesNotMatch(native, /LevelPlay\.init|loadAd\(/);
+});

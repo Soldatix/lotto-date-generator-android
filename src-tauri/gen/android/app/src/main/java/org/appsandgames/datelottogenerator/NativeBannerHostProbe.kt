@@ -125,6 +125,9 @@ internal class NativeBannerHostProbe(private val activity: Activity) {
               if (!slot) return false;
               if (!(window.__TAURI_INTERNALS__ ||
                     location.hostname === 'tauri.localhost')) return false;
+              var panel = slot.closest('.resultBox');
+              if (!panel) return false;
+              panel.classList.add('tablet-preview-active');
               slot.hidden = false;
               return true;
             })()

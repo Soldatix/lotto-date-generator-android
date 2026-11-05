@@ -127,3 +127,17 @@ be inserted directly into the HTML panel. Before any live SDK integration,
 design and separately device-test a native positioning bridge or choose a
 different safe native layout. Validate tablet generated results, history,
 keyboard, portrait/landscape, system navigation, and background/restore.
+
+
+### Huawei V8.1 landscape first-viewport finding (2026-11-05)
+
+Owner-provided photos confirmed V8 HTML no-ad banner is correctly inside the right
+result card on both orientations, does not overlap Android system navigation.
+In landscape, it initially appeared below the first viewport (scroll required)
+because `.resultBox` stretched to match the taller form and the banner
+had `margin: auto auto 0`. In portrait, it was visible immediately.
+V8.1 keeps portrait unchanged, and **only in landscape 851px+** uses the
+debug-only `tablet-preview-active` class on the card to move the empty-state
+result and banner upward in normal flow. A 1100x620 browser smoke checks
+visibility without scrolling and verifies that generated results/history remain
+above the mock. No ads or native positioning bridge introduced.

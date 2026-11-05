@@ -81,7 +81,16 @@ try {
   await page.setViewportSize({width:1100,height:812});
   await page.reload();
   assert.equal(await page.locator('#nativeTabletBannerProbe').isHidden(), true);
-  await page.evaluate(() => { document.getElementById('nativeTabletBannerProbe').hidden = false; });
+  await page.setViewportSize({width:1100,height:620});
+  await page.evaluate(() => {
+    const slot=document.getElementById('nativeTabletBannerProbe');
+    slot.closest('.resultBox').classList.add('tablet-preview-active');
+    slot.hidden=false;
+  });
+  const initial=await page.locator('#nativeTabletBannerProbe').boundingBox();
+  assert.ok(initial && initial.y >= 0 && initial.y + initial.height <= 620,
+    'Landscape mock should be visible in initial 1100x620 viewport without scrolling');
+  console.log('PASS: landscape first viewport shows tablet mock before scrolling');
   await page.locator('#dateInput').fill('05/11/2026');
   await page.locator('#generateBtn').click();
   await page.locator('#saveBtn').click();

@@ -136,3 +136,16 @@ html[data-theme="dark"] .settings-delete{color:#ff8da0}
   letter-spacing: .02em;
   overflow: hidden;
 }
+
+
+/* V8.1 debug tablet mock: landscape often has less vertical viewport space.
+   Keep the 320x50 placeholder inside the right result card in normal flow,
+   but do not push it under the taller left card. Portrait remains unchanged. */
+@media (orientation: landscape) and (min-width: 851px) {
+  .resultBox.tablet-preview-active #resultArea.empty {
+    margin: clamp(20px, 7vh, 58px) auto 18px;
+  }
+  .resultBox.tablet-preview-active .native-tablet-banner-probe {
+    margin: 14px auto 0;
+  }
+}
