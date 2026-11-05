@@ -26,10 +26,11 @@ Write-Output 'PILOT_BRANCH=PASS; WORKTREE_CLEAN=PASS'
 
 $gradle = Join-Path $repo 'src-tauri\gen\android\app\build.gradle.kts'
 $pilot = Join-Path $repo 'src-tauri\gen\android\app\src\levelplayPilot\java\org\appsandgames\datelottogenerator\LevelPlaySdkBannerDraft.kt'
-$host = Join-Path $repo 'src-tauri\gen\android\app\src\main\java\org\appsandgames\datelottogenerator\LevelPlayBannerHost.kt'
+# PowerShell's automatic $Host variable is read-only; use a unique name.
+$bannerHostFile = Join-Path $repo 'src-tauri\gen\android\app\src\main\java\org\appsandgames\datelottogenerator\LevelPlayBannerHost.kt'
 $harness = Join-Path $repo 'ci\android-levelplay-compile'
 $wrapper = Join-Path $repo 'src-tauri\gen\android\gradlew.bat'
-foreach ($file in @($gradle, $pilot, $host, $wrapper,
+foreach ($file in @($gradle, $pilot, $bannerHostFile, $wrapper,
                     (Join-Path $harness 'build.gradle.kts'),
                     (Join-Path $harness 'settings.gradle.kts'),
                     (Join-Path $harness 'gradle.properties'))) {
@@ -79,7 +80,7 @@ foreach ($name in @('settings.gradle.kts', 'gradle.properties', 'build.gradle.kt
 $dest = Join-Path $tempRoot 'src\main\java\org\appsandgames\datelottogenerator'
 $null = New-Item -ItemType Directory -Path $dest -Force
 Copy-Item -LiteralPath $pilot -Destination (Join-Path $dest 'LevelPlaySdkBannerDraft.kt')
-Copy-Item -LiteralPath $host -Destination (Join-Path $dest 'LevelPlayBannerHost.kt')
+Copy-Item -LiteralPath $bannerHostFile -Destination (Join-Path $dest 'LevelPlayBannerHost.kt')
 
 # The only Gradle edit is a replacement inside the throwaway temp directory.
 $copiedGradle = Join-Path $tempRoot 'build.gradle.kts'
