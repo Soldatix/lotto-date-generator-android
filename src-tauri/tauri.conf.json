@@ -34,7 +34,8 @@
   "bundle": {
     "active": false,
     "android": {
-      "minSdkVersion": 24
+      "minSdkVersion": 24,
+      "debugApplicationIdSuffix": ".levelplaypilot"
     }
   }
 }
