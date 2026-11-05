@@ -43,3 +43,19 @@ test('Web preview remains independent of native real-ad authorization', () => {
   assert.doesNotMatch(sdk,/294760d25|vu3eqmvs1u5vo6wi/); // no publisher dashboard IDs committed
   assert.doesNotMatch(gradle,/294760d25|vu3eqmvs1u5vo6wi/);
 });
+
+
+test('Windows read-only preflight cannot abort on normal ADB daemon startup stderr', () => {
+  const script = read('scripts/LevelPlay-Android-Preflight-ReadOnly.ps1');
+  assert.match(script, /function Invoke-NativeInfo/);
+  assert.match(script, /RedirectStandardError = \$true/);
+  assert.match(script, /RedirectStandardOutput = \$true/);
+  assert.match(script, /WaitForExit\(15000\)/);
+  assert.match(script, /Invoke-NativeInfo -exe \$adb -arguments 'devices'/);
+  assert.doesNotMatch(script, /& \$adb devices/);
+  assert.match(script, /UNAUTHORIZED_ADB_DEVICE_COUNT/);
+  assert.match(script, /JAVA_HOME/);
+  assert.match(script, /Android\\Android Studio\\jbr\\bin\\java.exe/);
+  assert.match(script, /PRIVATE_IDS_NOT_PRINTED=TRUE/);
+  assert.match(script, /NO_SOURCE_CHANGES=TRUE; PRODUCTION_NO_GO=TRUE/);
+});
