@@ -49,6 +49,24 @@ The LevelPlay dashboard app and banner are now registered by the owner. A single
 - The full Tauri Android debug build, real Android window hosting, screen insets, runtime consent, SDK/AdQuality data behavior, and OPPO device tests **remain unverified**. No SDK-enabled APK should be distributed or installed before privacy review.
 - Added Windows read-only environment preflight `scripts/LevelPlay-Android-Preflight-ReadOnly.ps1`. It checks Git branch, Kotlin hard stop, Java, Node, SDK API availability and authorized ADB device *count* without printing Advertising IDs or installing anything. Running `adb devices` may start the local ADB server.
 
+## Separate installable debug APK identity — 2026-11-05
+
+The **full Android/Gradle compiler-only run against local API 37** passed on the developer's PC. Gradle returned \`BUILD SUCCESSFUL\`, \`GRADLE_EXIT_CODE=0\`, \`LEVELPLAY_KOTLIN_COMPILE=PASS\`; no APK was built in that run.
+
+For the *next* stage, only the Draft PR branch now uses the supported Tauri setting:
+- \`src-tauri/tauri.conf.json\` → \`bundle.android.debugApplicationIdSuffix = ".levelplaypilot"\`
+- \`src-tauri/gen/android/app/build.gradle.kts\` → matching \`buildTypes.debug.applicationIdSuffix = ".levelplaypilot"\` for Android Studio direct builds. The release \`defaultConfig.applicationId\` remains \`org.appsandgames.datelottogenerator\`.
+- **Production Android ID**: \`org.appsandgames.datelottogenerator\`
+- **Isolated Debug Android ID**: \`org.appsandgames.datelottogenerator.levelplaypilot\`
+- \`src-tauri/gen/android/app/src/debug/res/values/strings.xml\` overlays the launcher and Activity label to show **Date Lotto - LP TEST** in debug builds. Release resources remain unchanged.
+
+**Important**: This is not yet proof that the full Tauri Android build will succeed. The Tauri CLI may rewrite generated Android files. Additionally, a recent [Tauri bug report](https://github.com/tauri-apps/tauri/issues/15561) noted possible misplacement of debug suffix when a \`signingConfigs.debug\` block is present. Our current Gradle file has the correctly scoped \`buildTypes.getByName("debug")\` stanza, and the actual APK package is verified as an independent gate before install.
+
+\`scripts/LevelPlay-Android-Safe-DebugBuild.ps1\` performs an optional **NO-INSTALL**, local ARM64 \`--debug --apk\` Tauri build in the already-isolated GitHub pilot checkout. It validates Git branch and worktree, static package configuration and privacy hard stops; refuses globally-enabled ad SDK; invokes \`npm ci\`, then \`npm run tauri -- android build --debug --apk --ci --target aarch64\`; afterwards reads the **actual built APK ID** via Android build-tools \`aapt dump badging\`, and refuses any APK with a package ID different from \`org.appsandgames.datelottogenerator.levelplaypilot\` or an unexpected app label. It produces an APK on the Windows PC only: **it never runs ADB install, starts any app, merges PR, creates release, or sends real ad requests**.
+
+The default debug build DOES NOT include the LevelPlay SDK. There is an independent, opt-in SDK-compile scaffold in the Gradle file but it stays off, and native \`APPROVED_AD_REQUESTS = false\` remains unchanged. If the debug APK builds successfully, a separate human-reviewed install step must verify signature, package ID and absence of changes to the existing production app; do not run Android Studio's automatic Run/Install before that.
+
+
 ## Verification and rollback
 
 The original `main` branch remains unchanged. PR is Draft. A static/mock test passing is not evidence that the actual Unity SDK loads, that banner inventory exists, that mediation is approved, or that revenue is generated.
