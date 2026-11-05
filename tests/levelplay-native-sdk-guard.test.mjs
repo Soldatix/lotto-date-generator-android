@@ -133,3 +133,20 @@ test('Native 320x50 host diagnostic is explicit, debug-only and free of ad calls
   assert.match(probe, /attachWhenReady\(root, attempt \+ 1\)/);
   assert.match(sdk, /private const val APPROVED_AD_REQUESTS = false/);
 });
+
+// Tablet placement is a separate HTML mock; it is not the Android ad SDK.
+test('Native probe only reveals tablet mock with debug gates; never overlays tablet system navigation', () => {
+  const probe = read('src-tauri/gen/android/app/src/main/java/org/appsandgames/datelottogenerator/NativeBannerHostProbe.kt');
+  const html = read('index.html');
+  const css = read('src/styles/main.css');
+  assert.match(probe, /smallestScreenWidthDp >= 600/);
+  assert.match(probe, /showTabletPanelMock\(root, attempt\)/);
+  assert.match(probe, /web\.evaluateJavascript\(script\)/);
+  assert.match(probe, /window\.__TAURI_INTERNALS__/);
+  assert.match(probe, /HOST_PROBE=TABLET_PANEL_ATTACHED_NO_ADS/);
+  assert.match(probe, /HOST_PROBE=TABLET_PANEL_NOT_READY_NO_ADS/);
+  assert.match(probe, /attempt >= 20/);
+  assert.doesNotMatch(probe, /LevelPlay\.init|\.loadAd\(|setGDPRConsent/);
+  assert.match(html, /id="nativeTabletBannerProbe"[^>]*hidden/);
+  assert.match(css, /\.native-tablet-banner-probe\[hidden\] \{ display: none !important; \}/);
+});

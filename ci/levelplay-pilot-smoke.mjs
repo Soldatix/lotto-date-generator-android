@@ -76,6 +76,32 @@ try {
   assert.equal(await page.locator('.levelplay-pilot-placeholder').count(),0);
   assert.equal(await page.locator('.levelplay-pilot-button').count(),2);
   assert.equal(blocked.filter(x=>/unity|ironsource|levelplay|admob|applovin|adsterra/i.test(x)).length,0);
+  // Tablet in-panel layout smoke: source stays hidden until the native debug
+  // intent asks Android WebView to reveal this *visual mock*.
+  await page.setViewportSize({width:1100,height:812});
+  await page.reload();
+  assert.equal(await page.locator('#nativeTabletBannerProbe').isHidden(), true);
+  await page.evaluate(() => { document.getElementById('nativeTabletBannerProbe').hidden = false; });
+  await page.locator('#dateInput').fill('05/11/2026');
+  await page.locator('#generateBtn').click();
+  await page.locator('#saveBtn').click();
+  const bounds=await page.evaluate(() => {
+    const b=sel=>document.querySelector(sel).getBoundingClientRect().toJSON();
+    return {
+      card:b('.resultBox'),
+      result:b('#resultArea'),
+      history:b('#historyWrap'),
+      slot:b('#nativeTabletBannerProbe'),
+      first:b('.grid > .card:first-child')
+    };
+  });
+  assert.ok(bounds.slot.width >= 300 && bounds.slot.width <= 321 && bounds.slot.height >= 49);
+  assert.ok(bounds.slot.x >= bounds.card.x - 1 && bounds.slot.right <= bounds.card.right + 1);
+  assert.ok(bounds.slot.y >= bounds.result.bottom - 1 && bounds.slot.y >= bounds.history.bottom - 1);
+  assert.ok(bounds.slot.bottom <= bounds.card.bottom + 1);
+  assert.ok(bounds.slot.x > bounds.first.right, 'Tablet test placement must be in the right panel');
+  console.log('PASS: tablet 320x50 mock in right panel, after generated result and saved history');
+
   await androidTauri.context.close();
   console.log('PASS: tiny screens hide mock, demo consent never persisted and zero ad-network requests');
 } finally {

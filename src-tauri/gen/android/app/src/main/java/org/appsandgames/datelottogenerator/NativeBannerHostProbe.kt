@@ -7,6 +7,7 @@ import android.util.Log
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
+import android.webkit.WebView
 import android.widget.FrameLayout
 import android.widget.TextView
 
@@ -58,6 +59,15 @@ internal class NativeBannerHostProbe(private val activity: Activity) {
             root.getChildAt(it).javaClass.simpleName
         }
         Log.i(TAG, "HOST_PROBE=ROOT_LAYOUT children=${root.childCount} types=$childTypes")
+
+        // Tablet: an actual Android ad view cannot live inside an HTML panel.
+        // Reveal a strictly debug-only HTML placement mock INSIDE the result
+        // panel; never place a native overlay across Android navigation keys.
+        if (activity.resources.configuration.smallestScreenWidthDp >= 600) {
+            showTabletPanelMock(root, attempt)
+            return
+        }
+
         try {
                 val strip = host.reserveBottomStripAfterReview()
                 if (strip == null) {
@@ -87,6 +97,56 @@ internal class NativeBannerHostProbe(private val activity: Activity) {
             Log.e(TAG, "HOST_PROBE=SAFE_FAILURE_NO_ADS", error)
             host.release()
         }
+    }
+
+    private fun findWebView(view: View): WebView? {
+        if (view is WebView) return view
+        if (view is ViewGroup) {
+            for (index in 0 until view.childCount) {
+                val match = findWebView(view.getChildAt(index))
+                if (match != null) return match
+            }
+        }
+        return null
+    }
+
+    private fun showTabletPanelMock(root: FrameLayout, attempt: Int) {
+        val web = findWebView(root)
+        if (web == null) {
+            retryTabletMock(root, attempt)
+            return
+        }
+
+        // The HTML node is permanently hidden by default. This debug-only
+        // injection does not connect to a banner SDK, network, or CMP.
+        val script = """
+            (function() {
+              var slot = document.getElementById('nativeTabletBannerProbe');
+              if (!slot) return false;
+              if (!(window.__TAURI_INTERNALS__ ||
+                    location.hostname === 'tauri.localhost')) return false;
+              slot.hidden = false;
+              return true;
+            })()
+        """.trimIndent()
+
+        web.evaluateJavascript(script) { result ->
+            if (activity.isFinishing || activity.isDestroyed || attached) return@evaluateJavascript
+            if (result == "true") {
+                attached = true
+                Log.i(TAG, "HOST_PROBE=TABLET_PANEL_ATTACHED_NO_ADS")
+            } else {
+                retryTabletMock(root, attempt)
+            }
+        }
+    }
+
+    private fun retryTabletMock(root: FrameLayout, attempt: Int) {
+        if (attempt >= 20) {
+            Log.w(TAG, "HOST_PROBE=TABLET_PANEL_NOT_READY_NO_ADS")
+            return
+        }
+        root.postDelayed({ attachWhenReady(root, attempt + 1) }, 300L)
     }
 
     fun detach() {

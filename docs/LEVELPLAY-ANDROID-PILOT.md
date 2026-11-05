@@ -102,3 +102,28 @@ ordinary launches do not attach the probe. Neither SDK, consent bridge nor
 advertisement requests are introduced or enabled. Tauri/WebView insets,
 keyboard/rotation and actual placement must still be checked on Huawei.
 Do not merge this Draft PR or deploy anything to production.
+
+
+## Tablet right-panel debug placement candidate (2026-11-05)
+
+User confirmed V7 `HOST_PROBE=ATTACHED_NO_ADS` on Huawei CMR-W09,
+but the native blue strip intersected Android 3-button navigation controls.
+**Native integration placement is therefore NOT approved**, even though the
+view was attached successfully.
+
+New **tablet-only visual experiment**: a hidden 320x50px HTML mock at the
+bottom of the existing `resultBox` card, after generated results and saved
+history. The layout is normal document flow, not positioned over content.
+For a tablet (`smallestScreenWidthDp >= 600`) the exact isolated Android
+debug package + debuggable flag + explicit ADB boolean extra triggers
+`WebView.evaluateJavascript` to reveal it after Tauri loads. Default stays
+hidden. No real ad SDK, consent collection or external requests. The native
+50dp strip is NOT attached in this tablet path, so it cannot intersect
+Android navigation. On smaller devices, existing native bottom host is
+unchanged and its navigation-insets behavior is **not yet approved**.
+
+The HTML placement is a mock only: a LevelPlay native Android banner cannot
+be inserted directly into the HTML panel. Before any live SDK integration,
+design and separately device-test a native positioning bridge or choose a
+different safe native layout. Validate tablet generated results, history,
+keyboard, portrait/landscape, system navigation, and background/restore.

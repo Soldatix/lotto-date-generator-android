@@ -47,3 +47,17 @@ test('Mock choices and all portal languages available', () => {
   assert.match(js, /l\.change/);
   assert.match(js, /languageSelect\?\.addEventListener\('change', render\)/);
 });
+test('Tablet right-panel layout is a hidden, non-overlapping no-ad mock', () => {
+  const placement = html.indexOf('id="nativeTabletBannerProbe"');
+  const card = html.indexOf('class="card resultBox"');
+  const resultArea = html.indexOf('id="resultArea"');
+  const history = html.indexOf('id="historyWrap"');
+  const cardEnd = html.indexOf('</section>', card);
+  assert.ok(card >= 0 && resultArea > card && history > resultArea);
+  assert.ok(placement > history && placement < cardEnd);
+  assert.equal((html.match(/id="nativeTabletBannerProbe"/g) || []).length, 1);
+  assert.match(css, /\.native-tablet-banner-probe\[hidden\] \{ display: none !important; \}/);
+  assert.match(css, /width: min\(320px, 100%\)/);
+  assert.match(css, /flex: 0 0 50px/);
+  assert.doesNotMatch(js, /nativeTabletBannerProbe/);
+});
