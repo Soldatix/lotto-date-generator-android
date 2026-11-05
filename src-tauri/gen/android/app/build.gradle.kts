@@ -14,6 +14,19 @@ val tauriProperties = Properties().apply {
     }
 }
 
+// LEVELPLAY PILOT: SDK is NOT in ordinary builds. It is only resolved when
+// the developer explicitly builds a disposable DEBUG SDK test with
+// -PappsGamesLevelPlaySdkPilot=true. Never enable for a release artifact.
+// The SDK includes AdQuality; merely installing the dependency may change
+// startup privacy behavior. No app key or ad unit ID belongs in this file.
+val levelPlaySdkPilot = providers.gradleProperty("appsGamesLevelPlaySdkPilot")
+    .orNull?.equals("true", ignoreCase = true) == true
+if (levelPlaySdkPilot && gradle.startParameter.taskNames.any {
+        it.contains("release", ignoreCase = true) || it.contains("publish", ignoreCase = true)
+    }) {
+    throw GradleException("LEVELPLAY_PRODUCTION_NO_GO: release and publish tasks forbidden for SDK pilot")
+}
+
 // DATE_LOTTO_RELEASE_SIGNING
 val keystorePropertiesFile =
     rootProject.file("keystore.properties")
@@ -108,6 +121,10 @@ rust {
 }
 
 dependencies {
+    // Test-build opt-in, version pinned to Unity's documented Android SDK.
+    if (levelPlaySdkPilot) {
+        implementation("com.unity3d.ads-mediation:mediation-sdk:9.5.0")
+    }
     implementation("androidx.webkit:webkit:1.14.0")
     implementation("androidx.appcompat:appcompat:1.7.1")
     implementation("androidx.activity:activity-ktx:1.10.1")
