@@ -113,13 +113,24 @@ try {
     Push-Location -LiteralPath $repo
     try {
         Write-Output 'NPM_CI=START'
-        & npm.cmd ci --no-audit --no-fund
-        if ($LASTEXITCODE -ne 0) { throw 'NPM_CI_FAILED' }
+        # Windows PowerShell 5.1 treats some native STDERR progress output
+        # as a terminating error with ErrorActionPreference=Stop. Start-Process
+        # preserves console output and exposes a reliable process exit code.
+        $npmExecutable = (Get-Command 'npm.cmd' -ErrorAction Stop).Source
+        $npmResult = Start-Process -FilePath $npmExecutable -ArgumentList @(
+            'ci', '--no-audit', '--no-fund'
+        ) -NoNewWindow -Wait -PassThru
+        if ($npmResult.ExitCode -ne 0) { throw ('NPM_CI_FAILED_EXIT=' + $npmResult.ExitCode) }
         Write-Output 'NPM_CI=PASS'
         Write-Output 'TAURI_ANDROID_DEBUG_BUILD=START'
         # Explicitly select debug + APK + arm64. No run/install command.
-        & npm.cmd run tauri -- android build --debug --apk --ci --target aarch64
-        if ($LASTEXITCODE -ne 0) { throw ('TAURI_DEBUG_BUILD_FAILED_EXIT=' + $LASTEXITCODE) }
+        $tauriResult = Start-Process -FilePath $npmExecutable -ArgumentList @(
+            'run', 'tauri', '--', 'android', 'build',
+            '--debug', '--apk', '--ci', '--target', 'aarch64'
+        ) -NoNewWindow -Wait -PassThru
+        if ($tauriResult.ExitCode -ne 0) {
+            throw ('TAURI_DEBUG_BUILD_FAILED_EXIT=' + $tauriResult.ExitCode)
+        }
         Write-Output 'TAURI_ANDROID_DEBUG_BUILD=PASS'
     } finally {
         Pop-Location
