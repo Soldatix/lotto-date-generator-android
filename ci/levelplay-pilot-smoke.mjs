@@ -68,6 +68,9 @@ try {
   console.log('PASS: EN/HR/DE/IT/ES localized placeholder');
 
   await page.setViewportSize({width:300,height:700});
+  // Resize and React-style re-render are asynchronous in Chromium.
+  await page.waitForFunction(() => window.innerWidth === 300
+    && document.querySelector('.levelplay-pilot-placeholder') === null);
   assert.equal(await page.locator('.levelplay-pilot-placeholder').count(),0);
   await page.reload();
   assert.equal(await page.locator('.levelplay-pilot-placeholder').count(),0);
