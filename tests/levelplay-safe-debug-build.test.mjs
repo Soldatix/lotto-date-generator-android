@@ -23,6 +23,9 @@ test('Local APK build enforces unique actual package ID and never installs it', 
   assert.match(s, /PRODUCTION_NO_GO=TRUE; RELEASE_BUILD=FORBIDDEN; APK_INSTALL=FORBIDDEN; ADS=OFF/);
   assert.match(s, /OPTIONAL_AD_SDK_DISABLED=TRUE/);
   assert.match(s, /GRADLE_USER_HOME/);
+  assert.match(s, /NDK_HOME_FOR_THIS_RUN=/);
+  assert.match(s, /\$env:NDK_HOME = \$ndkHome/);
+  assert.match(s, /\$env:NDK_HOME = \$oldNdk/);
   assert.match(s, /TAURI_MODIFIED_TRACKED_SOURCE_REVIEW_REQUIRED/);
   assert.match(s, /APPROVED_AD_REQUESTS = false/);
   assert.match(s, /& npm\.cmd run tauri -- android build --debug --apk --ci --target aarch64/);
