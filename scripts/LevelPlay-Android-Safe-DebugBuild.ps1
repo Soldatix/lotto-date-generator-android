@@ -46,8 +46,10 @@ Write-Output 'DEBUG_APPLICATION_ID_AND_SDK_HARD_STOPS=PASS'
 if ($env:ORG_GRADLE_PROJECT_appsGamesLevelPlaySdkPilot -eq 'true') {
     throw 'LEVELPLAY_SDK_GLOBAL_OPT_IN_FORBIDDEN'
 }
+$gradleUserHome = $env:GRADLE_USER_HOME
+if (-not $gradleUserHome) { $gradleUserHome = Join-Path $HOME '.gradle' }
 foreach ($propertyFile in @(
-    (Join-Path $HOME '.gradle\gradle.properties'),
+    (Join-Path $gradleUserHome 'gradle.properties'),
     (Join-Path $repo 'src-tauri\gen\android\gradle.properties'),
     (Join-Path $repo 'src-tauri\gen\android\app\gradle.properties')
 )) {
@@ -136,6 +138,10 @@ foreach ($candidate in $apkCandidates) {
 }
 $after = @(& git -C $repo status --porcelain)
 Write-Output ('SOURCE_WORKTREE_CLEAN=' + [bool]($after.Count -eq 0))
+if ($after.Count -ne 0) {
+    Write-Output 'PRODUCTION_NO_GO=TRUE; APK_INSTALL=BLOCKED'
+    throw 'TAURI_MODIFIED_TRACKED_SOURCE_REVIEW_REQUIRED'
+}
 Write-Output 'APP_PACKAGE_ISOLATION=PASS'
 Write-Output 'NO_AD_SDK_BY_DEFAULT=TRUE; NO_AD_REQUESTS=TRUE'
 Write-Output 'APK_NOT_INSTALLED=TRUE; PRODUCTION_NO_GO=TRUE'
