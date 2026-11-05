@@ -70,3 +70,18 @@ test('Windows read-only preflight cannot abort on normal ADB daemon startup stde
   assert.match(script, /ANDROID_DEBUG_APK_NOT_INSTALLED=TRUE/);
   assert.match(script, /NO_LIVE_ADS=TRUE/);
 });
+
+
+test('Local API37 compile uses only disposable Android library and no APK/install', () => {
+  const s=read('scripts/LevelPlay-Android-API37-CompileOnly.ps1');
+  assert.match(s, /DateLotto-LevelPlay-API37-CompileOnly-/);
+  assert.match(s, /PILOT_BRANCH=PASS; WORKTREE_CLEAN=PASS/);
+  assert.match(s, /DOUBLE_SAFETY_GATES=PASS/);
+  assert.match(s, /platforms\\android-37\.0\\android\.jar/);
+  assert.match(s, /WriteAllText\(\$copiedGradle/);
+  assert.match(s, /\.Replace\('compileSdk = 36', 'compileSdk = 37'\)/);
+  assert.match(s, /& \$wrapper -p \$tempRoot --no-daemon --console=plain compileDebugKotlin/);
+  assert.doesNotMatch(s, /(?:\bassembleDebug\b|\binstallDebug\b|\badb\s+install\b|\btauri\s+android\s+build\b)/i);
+  assert.match(s, /ORIGINAL_REPO_UNMODIFIED/);
+  assert.match(s, /NO_AD_REQUESTS=TRUE; PRODUCTION_NO_GO=TRUE/);
+});
