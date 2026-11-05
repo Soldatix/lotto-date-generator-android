@@ -62,7 +62,7 @@ internal class NativeBannerHostProbe(private val activity: Activity) {
                 val strip = host.reserveBottomStripAfterReview()
                 if (strip == null) {
                     Log.w(TAG, "HOST_PROBE=ROOT_SHAPE_UNSUPPORTED")
-                    return@post
+                    return
                 }
                 val density = activity.resources.displayMetrics.density
                 val widthPx = (320f * density + 0.5f).toInt()
