@@ -108,6 +108,11 @@ android {
     buildFeatures {
         buildConfig = true
     }
+    // This Kotlin file set references the Unity SDK; it must not be compiled
+    // into normal Android, Windows, or release builds.
+    if (levelPlaySdkPilot) {
+        sourceSets.getByName("main").java.srcDir("src/levelplayPilot/java")
+    }
 }
 
 kotlin {
