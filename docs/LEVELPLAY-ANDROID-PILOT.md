@@ -41,6 +41,14 @@ The LevelPlay dashboard app and banner are now registered by the owner. A single
 6. Test with **registered test devices** using Unity's LevelPlay test mode and Integration Test Suite. Validate Android build, screen dimensions, portrait/landscape, offline, consent denial/revocation and actual Tauri lifecycle before any store update.
 7. Explicit release approval required; prepare Google Play `Contains ads` and Data Safety, privacy policy, and versionCode/versionName review. Keep user testing strictly nonproduction until approved.
 
+## Real LevelPlay SDK Kotlin compile evidence (2026-11-05)
+
+- **PASS:** [GitHub Actions SDK Kotlin compile-only run #42031868374](https://github.com/Soldatix/lotto-date-generator-android/actions/runs/42031868374). Gradle 9.6.1 executed `compileDebugKotlin` against the real `com.unity3d.ads-mediation:mediation-sdk:9.5.0` AAR. Output included `> Task :compileDebugKotlin` and `BUILD SUCCESSFUL`. Both `LevelPlayBannerHost.kt` and `LevelPlaySdkBannerDraft.kt` compiled without Kotlin errors.
+- The initial attempt failed because GitHub's Android SDK manager did not offer `platforms;android-37`; the **isolated CI project uses API 36** instead. This does NOT change the actual Tauri app's `compileSdk = 37`; a real Android build must verify the toolchain/API 37 separately.
+- The CI harness lives in `ci/android-levelplay-compile/` and the dedicated `.github/workflows/levelplay-android-kotlin-compile.yml`. It builds a disposable Android *library compile target*, **no APK/AAB**, does not run the LevelPlay SDK or call Adsterra/Unity ad endpoints, and does not install on a device.
+- The full Tauri Android debug build, real Android window hosting, screen insets, runtime consent, SDK/AdQuality data behavior, and OPPO device tests **remain unverified**. No SDK-enabled APK should be distributed or installed before privacy review.
+- Added Windows read-only environment preflight `scripts/LevelPlay-Android-Preflight-ReadOnly.ps1`. It checks Git branch, Kotlin hard stop, Java, Node, SDK API availability and authorized ADB device *count* without printing Advertising IDs or installing anything. Running `adb devices` may start the local ADB server.
+
 ## Verification and rollback
 
 The original `main` branch remains unchanged. PR is Draft. A static/mock test passing is not evidence that the actual Unity SDK loads, that banner inventory exists, that mediation is approved, or that revenue is generated.
