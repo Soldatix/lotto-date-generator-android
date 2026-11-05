@@ -28,7 +28,10 @@ test('Local APK build enforces unique actual package ID and never installs it', 
   assert.match(s, /\$env:NDK_HOME = \$oldNdk/);
   assert.match(s, /TAURI_MODIFIED_TRACKED_SOURCE_REVIEW_REQUIRED/);
   assert.match(s, /APPROVED_AD_REQUESTS = false/);
-  assert.match(s, /& npm\.cmd run tauri -- android build --debug --apk --ci --target aarch64/);
+  assert.match(s, /Start-Process -FilePath \$npmExecutable -ArgumentList/);
+  assert.match(s, /'ci', '--no-audit', '--no-fund'/);
+  assert.match(s, /'--debug', '--apk', '--ci', '--target', 'aarch64'/);
+  assert.match(s, /TAURI_DEBUG_BUILD_FAILED_EXIT=/);
   assert.match(s, /dump badging \$candidate\.FullName/);
   assert.match(s, /if \(\$actualId -ne \$expectedId\)/);
   assert.match(s, /DEBUG_APK_LABEL_NOT_VERIFIED/);
