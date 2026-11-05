@@ -10,7 +10,7 @@ ad impression, Google Play release, signing key, publisher app key or ad unit
 ID is used. A passing result **does not prove** that the real Tauri activity
 layout, native banner placement or Android device behavior works.
 
-Build on an Android-capable machine with the Android SDK 37 installed:
+Build on an Android-capable machine with the Android SDK 36 installed:
 
 \`\`\`bash
 mkdir -p ci/android-levelplay-compile/src/main/java/org/appsandgames/datelottogenerator
