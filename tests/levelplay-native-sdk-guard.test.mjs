@@ -76,9 +76,9 @@ test('Local API37 compile uses only disposable Android library and no APK/instal
   const s=read('scripts/LevelPlay-Android-API37-CompileOnly.ps1');
   assert.match(s, /DateLotto-LevelPlay-API37-CompileOnly-/);
   assert.match(s, /PILOT_BRANCH=PASS; WORKTREE_CLEAN=PASS/);
-  assert.doesNotMatch(s, /\\$host\\b/gi, 'Reserved PowerShell $Host variable is read-only');
-  assert.match(s, /\\$bannerHostFile = Join-Path \\$repo/);
-  assert.match(s, /Copy-Item -LiteralPath \\$bannerHostFile/);
+  assert.doesNotMatch(s, /\$host\b/gi, 'Reserved PowerShell $Host variable is read-only');
+  assert.match(s, /\$bannerHostFile = Join-Path \$repo/);
+  assert.match(s, /Copy-Item -LiteralPath \$bannerHostFile/);
   assert.match(s, /DOUBLE_SAFETY_GATES=PASS/);
   assert.match(s, /platforms\\android-37\.0\\android\.jar/);
   assert.match(s, /WriteAllText\(\$copiedGradle/);
