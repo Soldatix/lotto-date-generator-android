@@ -22,6 +22,8 @@ test('Local APK build enforces unique actual package ID and never installs it', 
   assert.match(s, /expectedId = 'org\.appsandgames\.datelottogenerator\.levelplaypilot'/);
   assert.match(s, /PRODUCTION_NO_GO=TRUE; RELEASE_BUILD=FORBIDDEN; APK_INSTALL=FORBIDDEN; ADS=OFF/);
   assert.match(s, /OPTIONAL_AD_SDK_DISABLED=TRUE/);
+  assert.match(s, /GRADLE_USER_HOME/);
+  assert.match(s, /TAURI_MODIFIED_TRACKED_SOURCE_REVIEW_REQUIRED/);
   assert.match(s, /APPROVED_AD_REQUESTS = false/);
   assert.match(s, /& npm\.cmd run tauri -- android build --debug --apk --ci --target aarch64/);
   assert.match(s, /dump badging \$candidate\.FullName/);
