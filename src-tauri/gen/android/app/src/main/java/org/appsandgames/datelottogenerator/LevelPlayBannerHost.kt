@@ -21,6 +21,8 @@ internal class LevelPlayBannerHost(private val activity: Activity) {
     private var container: FrameLayout? = null
     private var wrapper: LinearLayout? = null
     private var original: View? = null
+    private var originalLayoutParams: ViewGroup.LayoutParams? = null
+    private var originalIndex: Int = -1
 
     /**
      * Developer-only native host method. Has no ad SDK dependency.
@@ -36,6 +38,9 @@ internal class LevelPlayBannerHost(private val activity: Activity) {
         if (content.childCount != 1) return null
         val webRoot = content.getChildAt(0) ?: return null
         if (webRoot.parent !== content) return null
+        val savedParams = webRoot.layoutParams ?: return null
+        val savedIndex = content.indexOfChild(webRoot)
+        if (savedIndex < 0) return null
 
         val column = LinearLayout(activity).apply { orientation = LinearLayout.VERTICAL }
         val bannerSpace = FrameLayout(activity).apply {
@@ -66,6 +71,8 @@ internal class LevelPlayBannerHost(private val activity: Activity) {
         wrapper = column
         container = bannerSpace
         original = webRoot
+        originalLayoutParams = savedParams
+        originalIndex = savedIndex
         return bannerSpace
     }
 
@@ -77,10 +84,15 @@ internal class LevelPlayBannerHost(private val activity: Activity) {
         if (column.parent === root && child.parent === column) {
             column.removeView(child)
             root.removeView(column)
-            root.addView(child)
+            val savedParams = originalLayoutParams
+            val targetIndex = originalIndex.coerceIn(0, root.childCount)
+            if (savedParams != null) root.addView(child, targetIndex, savedParams)
+            else root.addView(child, targetIndex)
         }
         container = null
         wrapper = null
         original = null
+        originalLayoutParams = null
+        originalIndex = -1
     }
 }

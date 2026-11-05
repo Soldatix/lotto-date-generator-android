@@ -7,6 +7,8 @@ on:
     paths:
       - ci/android-levelplay-compile/**
       - src-tauri/gen/android/app/src/main/java/org/appsandgames/datelottogenerator/LevelPlayBannerHost.kt
+      - src-tauri/gen/android/app/src/main/java/org/appsandgames/datelottogenerator/LevelPlayHostProbe.kt
+      - src-tauri/gen/android/app/src/main/java/org/appsandgames/datelottogenerator/MainActivity.kt
       - src-tauri/gen/android/app/src/levelplayPilot/**
       - src-tauri/gen/android/gradle/wrapper/gradle-wrapper.properties
       - .github/workflows/levelplay-android-kotlin-compile.yml
@@ -56,8 +58,9 @@ jobs:
           dest="ci/android-levelplay-compile/src/main/java/org/appsandgames/datelottogenerator"
           mkdir -p "$dest"
           cp "src-tauri/gen/android/app/src/main/java/org/appsandgames/datelottogenerator/LevelPlayBannerHost.kt" "$dest/"
+          cp "src-tauri/gen/android/app/src/main/java/org/appsandgames/datelottogenerator/LevelPlayHostProbe.kt" "$dest/"
           cp "src-tauri/gen/android/app/src/levelplayPilot/java/org/appsandgames/datelottogenerator/LevelPlaySdkBannerDraft.kt" "$dest/"
-          test "$(find "$dest" -maxdepth 1 -name '*.kt' | wc -l)" -eq 2
+          test "$(find "$dest" -maxdepth 1 -name '*.kt' | wc -l)" -eq 3
 
       - name: Set Gradle distribution network timeout in CI workspace only
         shell: bash

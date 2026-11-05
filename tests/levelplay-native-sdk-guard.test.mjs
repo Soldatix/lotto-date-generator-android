@@ -110,3 +110,21 @@ test('Tauri and Android Studio debug builds have a separate installation identit
   assert.match(manifest, /android:authorities="\$\{applicationId\}\.fileprovider"/);
   assert.doesNotMatch(main, /LevelPlaySdkBannerDraft|reserveBottomStripAfterReview/);
 });
+
+test('Native 320x50 host diagnostic is explicit, debug-only and free of ad calls', () => {
+  const probe = read('src-tauri/gen/android/app/src/main/java/org/appsandgames/datelottogenerator/LevelPlayHostProbe.kt');
+  assert.match(main, /LevelPlayHostProbe\(this\)\.also \{ it\.scheduleIfRequested\(\) \}/);
+  assert.match(main, /nativeHostProbe\?\.detach\(\)/);
+  assert.match(probe, /activity\.packageName != PILOT_PACKAGE/);
+  assert.match(probe, /ApplicationInfo\.FLAG_DEBUGGABLE/);
+  assert.match(probe, /getBooleanExtra\(EXTRA_ENABLE, false\)/);
+  assert.match(probe, /org\.appsandgames\.datelottogenerator\.levelplaypilot/);
+  assert.match(probe, /HOST_PROBE=ATTACHED_NO_ADS/);
+  assert.match(probe, /320f \* density/);
+  assert.match(probe, /strip\.visibility = View\.VISIBLE/);
+  assert.doesNotMatch(probe, /LevelPlay\.init|LevelPlaySdkBannerDraft|loadAd\(|setGDPRConsent\(/);
+  assert.match(host, /originalLayoutParams = savedParams/);
+  assert.match(host, /originalIndex = savedIndex/);
+  assert.match(host, /root\.addView\(child, targetIndex, savedParams\)/);
+  assert.match(sdk, /private const val APPROVED_AD_REQUESTS = false/);
+});
