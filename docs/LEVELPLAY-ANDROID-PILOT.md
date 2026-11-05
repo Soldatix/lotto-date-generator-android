@@ -77,3 +77,28 @@ Source references:
 - https://docs.unity.com/en-us/grow/levelplay/sdk/android/regulation-advanced-settings
 - https://docs.unity.com/en-us/grow/levelplay/sdk/android/integration-testing
 - https://docs.unity.com/en-us/grow/levelplay/sdk/android/networks/guides/unity-ads
+
+
+## Huawei Android 9 root hierarchy finding and safe-margin host candidate (2026-11-05)
+
+Physical CMR-W09 result from the **SDK-free** test APK SHA-256
+`539FA3095178A1EDE616243C1626BDEAC440F92958F8D2A35914DE47765D2C46`:
+native test placeholder **not** displayed. Explicit ADB launch and focused Android
+logcat produced `HOST_PROBE=ROOT_SHAPE_UNSUPPORTED`. The test app itself ran.
+This is the expected failure of the old `content.childCount != 1` assumption,
+or another root-shape guard, **not** a mediation SDK failure.
+
+The next pilot candidate keeps existing Android `android.R.id.content`
+children in place. It reserves a 50dp area by temporarily adjusting the
+bottom margins of those FrameLayout children and adds an independent
+bottom-gravity Android FrameLayout for a 320x50dp **NO ADS** label.
+The exact original layout-parameter objects are saved and restored on release.
+If any existing child is not compatible, it fails closed without reparenting.
+The diagnostic logs child-count and class names (no personal data) and uses
+only four bounded retries while Tauri is attaching its WebView.
+
+**Safety:** exact debug package + FLAG_DEBUGGABLE + explicit ADB Intent boolean;
+ordinary launches do not attach the probe. Neither SDK, consent bridge nor
+advertisement requests are introduced or enabled. Tauri/WebView insets,
+keyboard/rotation and actual placement must still be checked on Huawei.
+Do not merge this Draft PR or deploy anything to production.

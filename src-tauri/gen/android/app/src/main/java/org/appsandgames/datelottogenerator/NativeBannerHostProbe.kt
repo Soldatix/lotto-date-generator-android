@@ -43,11 +43,22 @@ internal class NativeBannerHostProbe(private val activity: Activity) {
             return
         }
 
-        // Tauri builds its actual WebView hierarchy at runtime; wait until
-        // the first UI layout rather than modifying an XML placeholder.
-        root.post {
-            if (activity.isFinishing || activity.isDestroyed || attached) return@post
-            try {
+        // Allow Tauri's asynchronous WebView attachment to complete.
+        // Bounded retries only when the content root is temporarily empty.
+        root.post { attachWhenReady(root, 0) }
+    }
+
+    private fun attachWhenReady(root: FrameLayout, attempt: Int) {
+        if (activity.isFinishing || activity.isDestroyed || attached) return
+        if (root.childCount == 0 && attempt < 4) {
+            root.postDelayed({ attachWhenReady(root, attempt + 1) }, 250L)
+            return
+        }
+        val childTypes = (0 until root.childCount).joinToString(",") {
+            root.getChildAt(it).javaClass.simpleName
+        }
+        Log.i(TAG, "HOST_PROBE=ROOT_LAYOUT children=${root.childCount} types=$childTypes")
+        try {
                 val strip = host.reserveBottomStripAfterReview()
                 if (strip == null) {
                     Log.w(TAG, "HOST_PROBE=ROOT_SHAPE_UNSUPPORTED")
@@ -72,10 +83,9 @@ internal class NativeBannerHostProbe(private val activity: Activity) {
                 strip.visibility = View.VISIBLE
                 attached = true
                 Log.i(TAG, "HOST_PROBE=ATTACHED_NO_ADS")
-            } catch (error: RuntimeException) {
-                Log.e(TAG, "HOST_PROBE=SAFE_FAILURE_NO_ADS", error)
-                host.release()
-            }
+        } catch (error: RuntimeException) {
+            Log.e(TAG, "HOST_PROBE=SAFE_FAILURE_NO_ADS", error)
+            host.release()
         }
     }
 

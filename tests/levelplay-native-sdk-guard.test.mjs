@@ -30,9 +30,12 @@ test('SDK Kotlin implementation is dormant behind a separate hard stop', () => {
 test('Native host is non-overlapping and never installed automatically', () => {
   assert.match(host, /class LevelPlayBannerHost/);
   assert.match(host, /fun reserveBottomStripAfterReview/);
-  assert.match(host, /content\.childCount != 1/);
-  assert.match(host, /column\.addView\(\s*webRoot/);
-  assert.match(host, /bannerSpace,\s*LinearLayout\.LayoutParams/);
+  assert.match(host, /content\.childCount == 0/);
+  assert.match(host, /for \(index in 0 until content\.childCount\)/);
+  assert.match(host, /old\.bottomMargin \+ heightPx/);
+  assert.match(host, /content\.addView\(\s*bannerSpace/);
+  assert.match(host, /Gravity\.BOTTOM or Gravity\.CENTER_HORIZONTAL/);
+  assert.doesNotMatch(host, /content\.removeView\(webRoot\)|LinearLayout/);
   assert.match(host, /visibility = View\.GONE/);
   assert.doesNotMatch(host, /LevelPlay\.init|\.loadAd\(/);
 });
@@ -123,8 +126,10 @@ test('Native 320x50 host diagnostic is explicit, debug-only and free of ad calls
   assert.match(probe, /320f \* density/);
   assert.match(probe, /strip\.visibility = View\.VISIBLE/);
   assert.doesNotMatch(probe, /LevelPlay\.init|LevelPlaySdkBannerDraft|loadAd\(|setGDPRConsent\(/);
-  assert.match(host, /originalLayoutParams = savedParams/);
-  assert.match(host, /originalIndex = savedIndex/);
-  assert.match(host, /root\.addView\(child, targetIndex, savedParams\)/);
+  assert.match(host, /originals = saved/);
+  assert.match(host, /item\.view\.layoutParams = item\.layout/);
+  assert.match(host, /if \(strip\?\.parent === root\) root\.removeView\(strip\)/);
+  assert.match(probe, /HOST_PROBE=ROOT_LAYOUT children=/);
+  assert.match(probe, /attachWhenReady\(root, attempt \+ 1\)/);
   assert.match(sdk, /private const val APPROVED_AD_REQUESTS = false/);
 });
