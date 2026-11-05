@@ -24,7 +24,7 @@ test('Android Tauri only, explicit preview parameter, no default ad placement', 
 test('No network ad SDK, web banner or tracking added to the application', () => {
   assert.doesNotMatch(js, /fetch\s*\(|XMLHttpRequest|createElement\(['"]script|bauval|atOptions|adsbygoogle|document\.write/i);
   assert.doesNotMatch(main, /LevelPlay\.init|LevelPlay\.Init|mediation-sdk|IronSource\.init/);
-  assert.match(gradle, /if \(levelPlaySdkPilot\) \{\s*implementation\("com\\.unity3d\\.ads-mediation:mediation-sdk:9\\.5\\.0"\)/);
+  assert.match(gradle, /if \(levelPlaySdkPilot\) \{\s*implementation\("com\.unity3d\.ads-mediation:mediation-sdk:9\.5\.0"\)/);
   assert.doesNotMatch(activity, /LevelPlay|IronSource|adUnitId/);
 });
 
