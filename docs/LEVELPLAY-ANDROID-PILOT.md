@@ -1,6 +1,6 @@
 # Unity LevelPlay Android banner — isolated pilot (2026-11-04)
 
-**STATUS: DRAFT / PRODUCTION NO-GO — MOCK ONLY. NO SDK, no ad requests, no tracking, no changes to the published Android release.**
+**STATUS: DRAFT / PRODUCTION NO-GO — SDK GRADLE OPT-IN AND DORMANT KOTLIN ADAPTER ONLY. No automatic SDK loading, no ad requests, no tracking by our code, no changes to the published Android release.**
 
 ## Application reality
 
@@ -16,12 +16,27 @@ Unity LevelPlay's **native Android SDK** can be integrated via the Android Gradl
 - `src/main.js`: initializes the visual mock, but only if ALL conditions hold: URL parameter `?levelPlayPreview=1`, Tauri environment, **Android** user agent. A standard browser/PWA and Windows Tauri do not display it. In normal Android app launch it is hidden too.
 - `tests/levelplay-pilot.test.mjs` and `ci/levelplay-pilot-smoke.mjs`: static and Playwright checks. Simulated `window.__TAURI_INTERNALS__` in CI is **not a real Android device test**.
 
+## Android SDK scaffold added in PR #2 (2026-11-05)
+
+The LevelPlay dashboard app and banner are now registered by the owner. A single network, **ironSource Bidding**, has a Banner instance. Test device **OPPO Find X5 Lite** is enrolled under `DateLotto_Test_Android`. Because test-network configuration is time-limited, reactivate it at actual device-test time. **Do not add the registered device's Advertising ID to GitHub**. The owner already has both the App Key and Ad Unit ID in their private dashboard; no identifiers are stored in Kotlin or Gradle.
+
+- `src-tauri/gen/android/app/build.gradle.kts`: optional, pinned `com.unity3d.ads-mediation:mediation-sdk:9.5.0` dependency. **Not included by default**. Requires manual `-PappsGamesLevelPlaySdkPilot=true` to resolve SDK in a disposable debug build. Release/publish tasks are rejected if the flag is set. The optional Kotlin source folder `src/levelplayPilot/java` is excluded by default.
+- `src-tauri/gen/android/app/src/main/java/.../LevelPlayBannerHost.kt`: inactive native `FrameLayout` host. Its manually called helper reserves a 50dp strip below the Tauri WebView by inserting a vertical layout; it **is not invoked** by `MainActivity`. Tauri view hierarchy, system insets and keyboard interaction **must** be checked on physical device before calling this method.
+- `src-tauri/gen/android/app/src/levelplayPilot/java/.../LevelPlaySdkBannerDraft.kt`: candidate Kotlin SDK init, privacy flag, 320x50 banner lifecycle and cleanup (using verified Unity Android API namespace `com.unity3d.mediation`). **Second immutable guard `APPROVED_AD_REQUESTS = false` blocks SDK initialization even when the optional dependency is included.** Neither this class nor its host is called by `MainActivity`.
+- `tests/levelplay-native-sdk-guard.test.mjs`: asserts the Gradle opt-in, hard stops, absence of keys and no automatic native attachment.
+
+**Very important:** SDK `9.5.0` includes AdQuality, and a dependency's presence alone may have data-collection implications. The default app has **neither** the SDK nor this new optional Kotlin source. The SDK-enabled disposable debug variant must be audited before installing it. A simulated Chromium suite does **not** compile Kotlin or validate real Tauri view hosting; a physical Android debug build and device testing still remain necessary.
+
+**Required implementation work remaining:** legally reviewed CMP with native consent bridge, conditional lifecycle attachment after verification, integration tests against the real AAR (native Kotlin compile), final ad network adapters, Google Play Data Safety updates, screenshots of tested display and withdrawal. No advertising network requests should be made until all conditions are satisfied. No real banner revenue is being generated.
+
+**Build note (developer-only / opt-in, NOT yet a tested command):** the property `appsGamesLevelPlaySdkPilot=true` enables optional SDK dependency and Kotlin source set for a disposable debug build. This does *not* enable ad requests. Never apply it to release/publish tasks and never check in real IDs or consent records.
+
 ## Next implementation phase — not yet authorized for production
 
 1. Create/access Unity LevelPlay publisher project for **Android** package `org.appsandgames.datelottogenerator`; obtain the **app key** and a **Banner ad unit ID**. Do not commit private dashboard identifiers or credentials; store any sensitive configuration securely. Do not create fake IDs.
 2. Choose just **one mediation manager** (LevelPlay). Initially connect Unity Ads or another eligible supported ad network. AppLovin MAX should not also mediate the same banner.
 3. Define an appropriate consent and privacy flow before SDK initialization, including applicable GDPR/EEA/Swiss requirements and Play Data Safety declarations. The test Allow/Reject buttons are **not** consent. Unity LevelPlay 9.5.0+ uses `LevelPlayPrivacySettings.setGDPRConsent(boolean)` before SDK initialization, but this API alone is **not** a legally adequate CMP. Consider approved CMP behavior and network-specific data processing.
-4. Review Android permissions, SDK initialization and automatic AdQuality, data collection, mediation adapters and Play Store declarations **before adding any dependency**. Official SDK setup currently lists `com.unity3d.ads-mediation:mediation-sdk:9.5.0`; we intentionally have **not** added it.
+4. Review Android permissions, SDK initialization and automatic AdQuality, data collection, mediation adapters and Play Store declarations **before enabling the optional SDK dependency**. Official SDK setup lists `com.unity3d.ads-mediation:mediation-sdk:9.5.0`; the test branch includes it conditionally but default builds do not resolve it.
 5. Implement a Kotlin/Android native banner host attached to the **actual** Tauri Activity view hierarchy (not the unused placeholder layout). After an appropriate consent decision, initialize LevelPlay and create a native `LevelPlayBannerAdView`, use `LevelPlayAdSize.BANNER` (320×50 dp) or documented adaptive size, attach it to native host, configure listeners, and call `loadAd()`. Ensure ad is never placed over interactive lotto controls. Cleanup through `destroy()`, pause/resume refresh as appropriate, and handle withdrawal/restart without treating DOM removal as cookie deletion.
 6. Test with **registered test devices** using Unity's LevelPlay test mode and Integration Test Suite. Validate Android build, screen dimensions, portrait/landscape, offline, consent denial/revocation and actual Tauri lifecycle before any store update.
 7. Explicit release approval required; prepare Google Play `Contains ads` and Data Safety, privacy policy, and versionCode/versionName review. Keep user testing strictly nonproduction until approved.
