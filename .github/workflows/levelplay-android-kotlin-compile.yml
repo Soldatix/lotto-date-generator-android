@@ -29,13 +29,13 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Prepare Android SDK 37
+      - name: Prepare Android SDK 36
         shell: bash
         run: |
           set -euo pipefail
           echo "Android SDK: $ANDROID_HOME"
           "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install \
-            "platforms;android-37" "build-tools;37.0.0"
+            "platforms;android-36" "build-tools;36.0.0"
           "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
 
       - name: Confirm production no-go and missing secrets
