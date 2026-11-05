@@ -88,3 +88,25 @@ test('Local API37 compile uses only disposable Android library and no APK/instal
   assert.match(s, /ORIGINAL_REPO_UNMODIFIED/);
   assert.match(s, /NO_AD_REQUESTS=TRUE; PRODUCTION_NO_GO=TRUE/);
 });
+
+
+test('Tauri and Android Studio debug builds have a separate installation identity', () => {
+  const config=JSON.parse(read('src-tauri/tauri.conf.json'));
+  const debugLabels=read('src-tauri/gen/android/app/src/debug/res/values/strings.xml');
+  const releaseLabels=read('src-tauri/gen/android/app/src/main/res/values/strings.xml');
+  const manifest=read('src-tauri/gen/android/app/src/main/AndroidManifest.xml');
+  assert.equal(config.identifier,'org.appsandgames.datelottogenerator');
+  assert.equal(config.bundle.android.debugApplicationIdSuffix,'.levelplaypilot');
+  assert.match(gradle,/applicationId = "org\.appsandgames\.datelottogenerator"/);
+  const debugBlock=gradle.match(/getByName\("debug"\) \{([\s\S]*?)\n        \}/);
+  assert.ok(debugBlock,'debug build type must exist');
+  assert.match(debugBlock[1],/applicationIdSuffix = "\.levelplaypilot"/);
+  assert.match(debugBlock[1],/versionNameSuffix = "-LevelPlayTest"/);
+  const releaseBlock=gradle.slice(gradle.indexOf('getByName("release") {'));
+  assert.doesNotMatch(releaseBlock,/applicationIdSuffix\s*=/);
+  assert.match(debugLabels,/<string name="app_name">Date Lotto - LP TEST<\/string>/);
+  assert.match(debugLabels,/<string name="main_activity_title">Date Lotto - LP TEST<\/string>/);
+  assert.match(releaseLabels,/<string name="app_name">"Date Lotto Generator"<\/string>/);
+  assert.match(manifest, /android:authorities="\$\{applicationId\}\.fileprovider"/);
+  assert.doesNotMatch(main, /LevelPlaySdkBannerDraft|reserveBottomStripAfterReview/);
+});
