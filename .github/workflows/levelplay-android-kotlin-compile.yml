@@ -1,0 +1,81 @@
+name: LevelPlay Android Kotlin compile only (NO ADS)
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - ci/android-levelplay-compile/**
+      - src-tauri/gen/android/app/src/main/java/org/appsandgames/datelottogenerator/LevelPlayBannerHost.kt
+      - src-tauri/gen/android/app/src/levelplayPilot/**
+      - src-tauri/gen/android/gradle/wrapper/gradle-wrapper.properties
+      - .github/workflows/levelplay-android-kotlin-compile.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sdk-kotlin-compile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout isolated review branch
+        uses: actions/checkout@v4
+
+      - name: Configure Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Prepare Android SDK 37
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "Android SDK: $ANDROID_HOME"
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install \
+            "platforms;android-37" "build-tools;37.0.0"
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
+
+      - name: Confirm production no-go and missing secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          gradle="src-tauri/gen/android/app/build.gradle.kts"
+          sdk="src-tauri/gen/android/app/src/levelplayPilot/java/org/appsandgames/datelottogenerator/LevelPlaySdkBannerDraft.kt"
+          grep -F 'appsGamesLevelPlaySdkPilot' "$gradle"
+          grep -F 'APPROVED_AD_REQUESTS = false' "$sdk"
+          ! grep -Eq '294760d25|vu3eqmvs1u5vo6wi' "$sdk" "$gradle"
+          echo "PASS: double safety gates, no publisher identifiers"
+
+      - name: Copy Kotlin sources into disposable compile-only Android library
+        shell: bash
+        run: |
+          set -euo pipefail
+          dest="ci/android-levelplay-compile/src/main/java/org/appsandgames/datelottogenerator"
+          mkdir -p "$dest"
+          cp "src-tauri/gen/android/app/src/main/java/org/appsandgames/datelottogenerator/LevelPlayBannerHost.kt" "$dest/"
+          cp "src-tauri/gen/android/app/src/levelplayPilot/java/org/appsandgames/datelottogenerator/LevelPlaySdkBannerDraft.kt" "$dest/"
+          test "$(find "$dest" -maxdepth 1 -name '*.kt' | wc -l)" -eq 2
+
+      - name: Compile against real Unity LevelPlay SDK (no APK)
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash src-tauri/gen/android/gradlew \
+            -p ci/android-levelplay-compile \
+            --no-daemon \
+            --console=plain \
+            compileDebugKotlin
+          echo "PASS: Kotlin classes compiled against real Unity LevelPlay AAR"
+
+      - name: Validate no distribution artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          if find ci/android-levelplay-compile -type f \( -name '*.apk' -o -name '*.aab' \) | grep -q .; then
+            echo "Unexpected APK/AAB in compile-only harness" >&2
+            exit 1
+          fi
+          echo "PASS: no APK, AAB or ad server request executed"
