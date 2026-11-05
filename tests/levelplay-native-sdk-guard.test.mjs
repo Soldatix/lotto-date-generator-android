@@ -62,6 +62,11 @@ test('Windows read-only preflight cannot abort on normal ADB daemon startup stde
   assert.match(script, /ANDROID_NDK_FOUND/);
   assert.match(script, /ANDROID_CMDLINE_TOOLS_FOUND/);
   assert.match(script, /APP_COMPILE_SDK/);
+  assert.match(script, /ANDROID_API_37_0_FOLDER_FOUND/);
+  assert.match(script, /ANDROID_API_37_0_ANDROID_JAR_FOUND/);
+  assert.match(script, /ANDROID_API_37_INSTALLED/);
+  assert.match(script, /AGP_COMPILE_SDK_37_RESOLUTION=NOT_YET_VERIFIED/);
+  assert.match(script, /platforms\\android-37\.0/);
   assert.match(script, /ANDROID_DEBUG_APK_NOT_INSTALLED=TRUE/);
   assert.match(script, /NO_LIVE_ADS=TRUE/);
 });
