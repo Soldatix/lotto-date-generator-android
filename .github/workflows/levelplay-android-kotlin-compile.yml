@@ -10,6 +10,7 @@ on:
       - src-tauri/gen/android/app/src/main/java/org/appsandgames/datelottogenerator/NativeBannerHostProbe.kt
       - src-tauri/gen/android/app/src/main/java/org/appsandgames/datelottogenerator/NativeAnchoredBannerProbe.kt
       - src-tauri/gen/android/app/src/main/java/org/appsandgames/datelottogenerator/NativeBannerAnchorBounds.kt
+      - src-tauri/gen/android/app/src/main/java/org/appsandgames/datelottogenerator/N4BannerSizeFitPolicy.kt
       - src-tauri/gen/android/app/src/main/java/org/appsandgames/datelottogenerator/MainActivity.kt
       - src-tauri/gen/android/app/src/levelplayPilot/**
       - src-tauri/gen/android/gradle/wrapper/gradle-wrapper.properties
@@ -63,9 +64,11 @@ jobs:
           cp "src-tauri/gen/android/app/src/main/java/org/appsandgames/datelottogenerator/NativeBannerHostProbe.kt" "$dest/"
           cp "src-tauri/gen/android/app/src/main/java/org/appsandgames/datelottogenerator/NativeAnchoredBannerProbe.kt" "$dest/"
           cp "src-tauri/gen/android/app/src/main/java/org/appsandgames/datelottogenerator/NativeBannerAnchorBounds.kt" "$dest/"
+          cp "src-tauri/gen/android/app/src/main/java/org/appsandgames/datelottogenerator/N4BannerSizeFitPolicy.kt" "$dest/"
+          cp "src-tauri/gen/android/app/src/levelplayPilot/java/org/appsandgames/datelottogenerator/N4ConsentGateDraft.kt" "$dest/"
           cp "src-tauri/gen/android/app/src/levelplayPilot/java/org/appsandgames/datelottogenerator/LevelPlayNativeBannerPlacementDraft.kt" "$dest/"
           cp "src-tauri/gen/android/app/src/levelplayPilot/java/org/appsandgames/datelottogenerator/LevelPlaySdkBannerDraft.kt" "$dest/"
-          test "$(find "$dest" -maxdepth 1 -name '*.kt' | wc -l)" -eq 6
+          test "$(find "$dest" -maxdepth 1 -name '*.kt' | wc -l)" -eq 8
 
       - name: Set Gradle distribution network timeout in CI workspace only
         shell: bash
@@ -84,8 +87,8 @@ jobs:
             -p ci/android-levelplay-compile \
             --no-daemon \
             --console=plain \
-            compileDebugKotlin
-          echo "PASS: Kotlin classes compiled against real Unity LevelPlay AAR"
+            compileDebugKotlin testDebugUnitTest
+          echo "PASS: Kotlin SDK compile and N4 pure geometry/consent tests (no APK)"
 
       - name: Validate no distribution artifact
         shell: bash

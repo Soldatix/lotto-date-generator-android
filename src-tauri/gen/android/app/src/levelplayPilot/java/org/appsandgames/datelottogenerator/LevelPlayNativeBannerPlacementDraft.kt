@@ -8,7 +8,6 @@ import android.view.View
 import android.widget.FrameLayout
 import com.unity3d.mediation.LevelPlayAdSize
 import com.unity3d.mediation.banner.LevelPlayBannerAdView
-import kotlin.math.roundToInt
 
 /**
  * N3 architecture compile-only bridge: NativeBannerAnchorBounds -> LevelPlay View.
@@ -29,10 +28,34 @@ internal class LevelPlayNativeBannerPlacementDraft(
         private const val PILOT_PACKAGE =
             "org.appsandgames.datelottogenerator.levelplaypilot"
         private const val N3_REAL_BANNER_MOUNT_APPROVED = false
+        private const val N4_ADAPTIVE_SIZE_NEGOTIATION_APPROVED = false
     }
 
     private var bannerView: LevelPlayBannerAdView? = null
     private var mounted = false
+    private var selectedSize: LevelPlayAdSize = LevelPlayAdSize.BANNER
+
+    /**
+     * This only type-checks the official Android adaptive size API;
+     * it cannot run in the N4 pilot. Adaptive is DEVICE width based, not
+     * necessarily the narrow width of our right-hand result panel.
+     */
+    fun proposeAdaptiveCandidateAfterReview(): Boolean {
+        check(Looper.myLooper() == Looper.getMainLooper())
+        if (!N4_ADAPTIVE_SIZE_NEGOTIATION_APPROVED) return false
+        if (activity.packageName != PILOT_PACKAGE ||
+            (activity.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) == 0) return false
+        val candidate = LevelPlayAdSize.createAdaptiveAdSize(activity) ?: return false
+        selectedSize = candidate
+        return true
+    }
+
+    fun previewCandidateFitNoAds(bounds: NativeBannerAnchorBounds): N4BannerPixelPlacement? =
+        N4BannerSizeFitPolicy.fit(
+            bounds, selectedSize.width, selectedSize.height,
+            activity.resources.displayMetrics.density,
+            root.width, root.height
+        )
 
     /**
      * Only a fully initialized, pre-created SDK view could be passed here
@@ -46,6 +69,7 @@ internal class LevelPlayNativeBannerPlacementDraft(
     ): Boolean {
         check(Looper.myLooper() == Looper.getMainLooper())
         if (!N3_REAL_BANNER_MOUNT_APPROVED) return false
+        if (!N4ConsentGateDraft.sdkInitializationPermitted(N4CmpEvidence())) return false
         if (activity.packageName != PILOT_PACKAGE ||
             (activity.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) == 0 ||
             !sdkInitialized || !verifiedConsent ||
@@ -67,25 +91,18 @@ internal class LevelPlayNativeBannerPlacementDraft(
         if (!N3_REAL_BANNER_MOUNT_APPROVED || !mounted) return
         val view = bannerView ?: return
 
-        // LevelPlay BANNER must not be scaled/clipped into a smaller slot.
-        // Huawei portrait uses ~298dp in the right column: fail closed.
-        // Future adaptive-size support needs its own safe size negotiation.
-        val density = activity.resources.displayMetrics.density
-        val standardWidthPx = (LevelPlayAdSize.BANNER.width * density).roundToInt()
-        val standardHeightPx = (LevelPlayAdSize.BANNER.height * density).roundToInt()
-        if (bounds.widthPx < standardWidthPx ||
-            bounds.heightPx < standardHeightPx ||
-            bounds.leftPx < 0 || bounds.topPx < 0 ||
-            bounds.leftPx + standardWidthPx > root.width ||
-            bounds.topPx + standardHeightPx > root.height) {
+        // Do not resize/crop a real SDK creative: check the full candidate
+        // size against the N1-verified native rectangle, otherwise hide.
+        val placement = previewCandidateFitNoAds(bounds)
+        if (placement == null) {
             view.visibility = View.GONE
             return
         }
         val layout = FrameLayout.LayoutParams(
-            standardWidthPx, standardHeightPx, Gravity.TOP or Gravity.START
+            placement.widthPx, placement.heightPx, Gravity.TOP or Gravity.START
         )
-        layout.leftMargin = bounds.leftPx + (bounds.widthPx - standardWidthPx) / 2
-        layout.topMargin = bounds.topPx + (bounds.heightPx - standardHeightPx) / 2
+        layout.leftMargin = placement.leftPx
+        layout.topMargin = placement.topPx
         view.layoutParams = layout
         view.visibility = View.VISIBLE
     }

@@ -19,7 +19,8 @@ test('Gradle production builds exclude LevelPlay SDK and opt-in sources', () => 
 test('SDK Kotlin implementation is dormant behind a separate hard stop', () => {
   assert.match(sdk, /private const val APPROVED_AD_REQUESTS = false/);
   assert.match(sdk, /if \(!APPROVED_AD_REQUESTS \|\| !consentGranted/);
-  assert.match(sdk, /LevelPlayPrivacySettings\.setGDPRConsent\(true\)/);
+  assert.doesNotMatch(sdk, /LevelPlayPrivacySettings\.setGDPRConsent\(true\)/);
+  assert.match(sdk, /N4ConsentGateDraft\.sdkInitializationPermitted\(N4CmpEvidence\(\)\)/);
   assert.match(sdk, /LevelPlay\.init\(activity, request,/);
   assert.match(sdk, /LevelPlayBannerAdView\(activity, adUnitId, config\)/);
   assert.match(sdk, /LevelPlayAdSize\.BANNER/);
@@ -242,4 +243,31 @@ test('N3 SDK placement adapter shares exact native geometry but remains fail-clo
   assert.match(wf, /LevelPlayNativeBannerPlacementDraft\.kt/);
   assert.match(wf, /NativeBannerAnchorBounds\.kt/);
   assert.match(wf, /-eq 6/);
+});
+
+
+test('N4 adaptive geometry and CMP gate remain fail-closed and SDK isolated',()=>{
+  const fit=read('src-tauri/gen/android/app/src/main/java/org/appsandgames/datelottogenerator/N4BannerSizeFitPolicy.kt');
+  const cmp=read('src-tauri/gen/android/app/src/levelplayPilot/java/org/appsandgames/datelottogenerator/N4ConsentGateDraft.kt');
+  const draft=read('src-tauri/gen/android/app/src/levelplayPilot/java/org/appsandgames/datelottogenerator/LevelPlayNativeBannerPlacementDraft.kt');
+  const wf=read('.github/workflows/levelplay-android-kotlin-compile.yml');
+  assert.match(fit,/fun fit\(/);
+  assert.match(fit,/w > anchor\.widthPx/);
+  assert.match(fit,/h > anchor\.heightPx/);
+  assert.doesNotMatch(fit,/LevelPlay\.init\(|\.loadAd\(|android\.webkit/);
+  assert.match(draft,/N4_ADAPTIVE_SIZE_NEGOTIATION_APPROVED = false/);
+  assert.match(draft,/if \(!N4_ADAPTIVE_SIZE_NEGOTIATION_APPROVED\) return false/);
+  assert.match(draft,/LevelPlayAdSize\.createAdaptiveAdSize\(activity\)/);
+  assert.match(draft,/N4BannerSizeFitPolicy\.fit/);
+  assert.match(draft,/N4ConsentGateDraft\.sdkInitializationPermitted\(N4CmpEvidence\(\)\)/);
+  assert.doesNotMatch(draft,/LevelPlay\.init\(|\.loadAd\(|setGDPRConsent\(/);
+  assert.match(cmp,/N4_SDK_START_REVIEW_APPROVED = false/);
+  assert.match(cmp,/refreshedThisLaunch/);
+  assert.match(cmp,/platformCanRequestAds/);
+  assert.match(cmp,/partnerAndPurposesReviewed/);
+  assert.match(cmp,/withdrawalHandlingReviewed/);
+  assert.doesNotMatch(cmp,/LevelPlay\.init\(|\.loadAd\(|UserMessagingPlatform|SharedPreferences/);
+  assert.match(wf,/testDebugUnitTest/);
+  assert.match(wf,/-eq 8/);
+  assert.doesNotMatch(main,/N4ConsentGateDraft|LevelPlayNativeBannerPlacementDraft/);
 });

@@ -28,4 +28,5 @@ kotlin {
 
 dependencies {
     implementation("com.unity3d.ads-mediation:mediation-sdk:9.5.0")
+    testImplementation("junit:junit:4.13.2")
 }

@@ -13,7 +13,6 @@ import com.unity3d.mediation.LevelPlayConfiguration
 import com.unity3d.mediation.LevelPlayInitError
 import com.unity3d.mediation.LevelPlayInitListener
 import com.unity3d.mediation.LevelPlayInitRequest
-import com.unity3d.mediation.LevelPlayPrivacySettings
 import com.unity3d.mediation.banner.LevelPlayBannerAdView
 import com.unity3d.mediation.banner.LevelPlayBannerAdViewListener
 
@@ -49,14 +48,16 @@ internal class LevelPlaySdkBannerDraft(
         adUnitId: String,
         consentGranted: Boolean
     ) {
-        if (!APPROVED_AD_REQUESTS || !consentGranted ||
+        if (!APPROVED_AD_REQUESTS ||
+            !N4ConsentGateDraft.sdkInitializationPermitted(N4CmpEvidence()) ||
+            !consentGranted ||
             appKey.isBlank() || adUnitId.isBlank() || initialized) return
 
         activity.runOnUiThread {
             if (initialized) return@runOnUiThread
             initialized = true
-            // This flag is a platform-level signal, NOT proof of lawful CMP consent.
-            LevelPlayPrivacySettings.setGDPRConsent(true)
+            // No hardcoded GDPR consent. A real CMP policy and native
+            // consent evidence must be reviewed before any future SDK init.
             val request = LevelPlayInitRequest.Builder(appKey).build()
             LevelPlay.init(activity, request, object : LevelPlayInitListener {
                 override fun onInitFailed(error: LevelPlayInitError) {
