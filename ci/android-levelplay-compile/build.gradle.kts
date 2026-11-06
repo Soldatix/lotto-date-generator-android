@@ -28,5 +28,6 @@ kotlin {
 
 dependencies {
     implementation("com.unity3d.ads-mediation:mediation-sdk:9.5.0")
+    implementation("com.google.android.ump:user-messaging-platform:4.0.0")
     testImplementation("junit:junit:4.13.2")
 }

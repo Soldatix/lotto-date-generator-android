@@ -134,6 +134,9 @@ dependencies {
     // Test-build opt-in, version pinned to Unity's documented Android SDK.
     if (levelPlaySdkPilot) {
         implementation("com.unity3d.ads-mediation:mediation-sdk:9.5.0")
+        // N6: UMP resolves ONLY in disposable opt-in LevelPlay debug source.
+        // Normal Android, release and Windows builds remain UMP-free.
+        implementation("com.google.android.ump:user-messaging-platform:4.0.0")
     }
     implementation("androidx.webkit:webkit:1.14.0")
     implementation("androidx.appcompat:appcompat:1.7.1")

@@ -50,6 +50,7 @@ internal class LevelPlaySdkBannerDraft(
     ) {
         if (!APPROVED_AD_REQUESTS ||
             !N4ConsentGateDraft.sdkInitializationPermitted(N4CmpEvidence()) ||
+            !N6AdMobReadinessGate.canInitializeSdkOrRequestAds(N6AdMobReadiness()) ||
             !consentGranted ||
             appKey.isBlank() || adUnitId.isBlank() || initialized) return
 

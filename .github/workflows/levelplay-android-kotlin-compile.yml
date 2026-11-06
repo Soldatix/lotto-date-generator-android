@@ -66,9 +66,11 @@ jobs:
           cp "src-tauri/gen/android/app/src/main/java/org/appsandgames/datelottogenerator/NativeBannerAnchorBounds.kt" "$dest/"
           cp "src-tauri/gen/android/app/src/main/java/org/appsandgames/datelottogenerator/N4BannerSizeFitPolicy.kt" "$dest/"
           cp "src-tauri/gen/android/app/src/levelplayPilot/java/org/appsandgames/datelottogenerator/N4ConsentGateDraft.kt" "$dest/"
+          cp "src-tauri/gen/android/app/src/levelplayPilot/java/org/appsandgames/datelottogenerator/N6AdMobReadinessGate.kt" "$dest/"
+          cp "src-tauri/gen/android/app/src/levelplayPilot/java/org/appsandgames/datelottogenerator/N6UmpConsentApiDraft.kt" "$dest/"
           cp "src-tauri/gen/android/app/src/levelplayPilot/java/org/appsandgames/datelottogenerator/LevelPlayNativeBannerPlacementDraft.kt" "$dest/"
           cp "src-tauri/gen/android/app/src/levelplayPilot/java/org/appsandgames/datelottogenerator/LevelPlaySdkBannerDraft.kt" "$dest/"
-          test "$(find "$dest" -maxdepth 1 -name '*.kt' | wc -l)" -eq 8
+          test "$(find "$dest" -maxdepth 1 -name '*.kt' | wc -l)" -eq 10
 
       - name: Set Gradle distribution network timeout in CI workspace only
         shell: bash
@@ -88,7 +90,7 @@ jobs:
             --no-daemon \
             --console=plain \
             compileDebugKotlin testDebugUnitTest
-          echo "PASS: Kotlin SDK compile and N4 pure geometry/consent tests (no APK)"
+          echo "PASS: LevelPlay 9.5.0 + UMP 4.0.0 compile-only; N4/N6 pure tests (no APK)"
 
       - name: Validate no distribution artifact
         shell: bash
