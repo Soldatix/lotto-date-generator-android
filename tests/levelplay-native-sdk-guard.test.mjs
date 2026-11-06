@@ -184,3 +184,32 @@ test('V8.2 tablet mock adapts to landscape/portrait without covering Android nav
   assert.match(css, /@media \(orientation: portrait\)/);
   assert.doesNotMatch(native, /LevelPlay\.init|loadAd\(/);
 });
+
+
+test('Anchored native debug-only view requires two ADB opt-ins and does not access ad SDK', () => {
+  const controller=read('src-tauri/gen/android/app/src/main/java/org/appsandgames/datelottogenerator/NativeBannerHostProbe.kt');
+  const anchor=read('src-tauri/gen/android/app/src/main/java/org/appsandgames/datelottogenerator/NativeAnchoredBannerProbe.kt');
+  assert.match(controller,/activity\.packageName != PILOT_PACKAGE/);
+  assert.match(controller,/ApplicationInfo\.FLAG_DEBUGGABLE/);
+  assert.match(controller,/getBooleanExtra\(EXTRA_ENABLE, false\)/);
+  assert.match(controller,/getBooleanExtra\(EXTRA_NATIVE_ANCHOR, false\) == true/);
+  assert.match(controller,/DEBUG_NATIVE_ANCHORED_PREVIEW/);
+  assert.match(controller,/NativeAnchoredBannerProbe\(activity\)/);
+  assert.match(anchor,/NATIVE_ANCHOR=ALIGNED_NO_ADS/);
+  assert.match(anchor,/NATIVE_ANCHOR=HIDDEN_OFFSCREEN_OR_SYSTEM_INSET/);
+  assert.match(anchor,/getBoundingClientRect/);
+  assert.match(anchor,/getLocationOnScreen/);
+  assert.match(anchor,/getWindowVisibleDisplayFrame/);
+  assert.match(anchor,/getComputedStyle/);
+  assert.match(anchor,/browser\.width\.toDouble\(\) \/ vw/);
+  assert.match(anchor,/browser\.height\.toDouble\(\) \/ vh/);
+  assert.match(anchor,/left \+ width > parent\.width/);
+  assert.match(anchor,/top \+ height > parent\.height/);
+  assert.match(anchor,/SAMPLE_MS = 450L/);
+  assert.match(anchor,/root\?\.removeCallbacks\(ticker\)/);
+  assert.doesNotMatch(anchor,/addJavascriptInterface|LevelPlay\.init|\.loadAd\(|setGDPRConsent|network|HttpURLConnection|https:\/\//i);
+  assert.match(main,/nativeHostProbe\?\.pause\(\)/);
+  assert.match(main,/nativeHostProbe\?\.resume\(\)/);
+  assert.match(main,/nativeHostProbe\?\.detach\(\)/);
+  assert.doesNotMatch(main,/LevelPlaySdkBannerDraft|reserveBottomStripAfterReview|startAfterVerifiedConsent/);
+});

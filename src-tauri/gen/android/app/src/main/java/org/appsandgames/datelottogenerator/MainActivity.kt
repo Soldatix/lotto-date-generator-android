@@ -14,6 +14,16 @@ class MainActivity : TauriActivity() {
     nativeHostProbe = NativeBannerHostProbe(this).also { it.scheduleIfRequested() }
   }
 
+  override fun onPause() {
+    nativeHostProbe?.pause()
+    super.onPause()
+  }
+
+  override fun onResume() {
+    super.onResume()
+    nativeHostProbe?.resume()
+  }
+
   override fun onDestroy() {
     nativeHostProbe?.detach()
     nativeHostProbe = null

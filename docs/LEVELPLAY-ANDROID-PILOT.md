@@ -168,3 +168,38 @@ after result/history without overlays. Native ads are still NOT embedded
 in the HTML panel; real LevelPlay SDK and ad requests remain OFF.
 **Production and release are NO_GO.** Physical verification after V8.2
 is a separate gate.
+
+
+## Stage N1: Native view overlay alignment (pilot-only, NO ADS; 2026-11-06)
+
+After V8.2, Huawei CMR-W09 Android 9 supplied a **VISUAL PASS** photo
+for the responsive 320x50 HTML test slot inside the right result panel, above
+Android navigation, below saved results.
+
+The N1 prototype demonstrates how a **native Android View** could follow
+that existing HTML-reserved rectangle without injecting an ad SDK. It does
+not put a native View *into* the WebView. Instead, the exact isolated,
+debuggable \`.levelplaypilot\` app plus TWO distinct explicit ADB extras
+are required:
+
+- \`org.appsandgames.datelottogenerator.DEBUG_NATIVE_BANNER_PROBE=true\`
+- \`org.appsandgames.datelottogenerator.DEBUG_NATIVE_ANCHORED_PREVIEW=true\`
+
+The default V8.2 no-ad HTML mock remains unchanged with only the first extra.
+When both are set on a tablet (smallest width >=600dp), native
+\`NativeAnchoredBannerProbe\` checks the DOM \`getBoundingClientRect()\`,
+compares WebView pixel dimensions with CSS viewport dimensions, computes
+screen-to-FrameLayout offsets and projects a non-interactive native TextView
+into the reserved slot. A conservative visible display frame check prevents
+the view from crossing Android navigation/status bars or the keyboard.
+It hides rather than repositioning when the anchor is scrolled offscreen,
+malformed, invalid or obscured. Polling is limited to the debug path at
+450ms, and onPause/onDestroy release callbacks/view. No WebView child
+reparenting, no JS interface, no persistence, no credentials or ad requests.
+
+N1 is a **layout architecture experiment only**, not consent, network
+ads, LevelPlay SDK initialization or production readiness. Automated
+Kotlin compile-only and static safety checks are required; real Huawei
+device viewport, scroll, keyboard, both orientations, rotation/restoration,
+and failure/fallback evidence must be gathered before considering further work.
+Production NO_GO, PR remains Draft, no merge or real SDK activation.

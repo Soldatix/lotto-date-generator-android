@@ -8,6 +8,7 @@ on:
       - ci/android-levelplay-compile/**
       - src-tauri/gen/android/app/src/main/java/org/appsandgames/datelottogenerator/LevelPlayBannerHost.kt
       - src-tauri/gen/android/app/src/main/java/org/appsandgames/datelottogenerator/NativeBannerHostProbe.kt
+      - src-tauri/gen/android/app/src/main/java/org/appsandgames/datelottogenerator/NativeAnchoredBannerProbe.kt
       - src-tauri/gen/android/app/src/main/java/org/appsandgames/datelottogenerator/MainActivity.kt
       - src-tauri/gen/android/app/src/levelplayPilot/**
       - src-tauri/gen/android/gradle/wrapper/gradle-wrapper.properties
@@ -59,8 +60,9 @@ jobs:
           mkdir -p "$dest"
           cp "src-tauri/gen/android/app/src/main/java/org/appsandgames/datelottogenerator/LevelPlayBannerHost.kt" "$dest/"
           cp "src-tauri/gen/android/app/src/main/java/org/appsandgames/datelottogenerator/NativeBannerHostProbe.kt" "$dest/"
+          cp "src-tauri/gen/android/app/src/main/java/org/appsandgames/datelottogenerator/NativeAnchoredBannerProbe.kt" "$dest/"
           cp "src-tauri/gen/android/app/src/levelplayPilot/java/org/appsandgames/datelottogenerator/LevelPlaySdkBannerDraft.kt" "$dest/"
-          test "$(find "$dest" -maxdepth 1 -name '*.kt' | wc -l)" -eq 3
+          test "$(find "$dest" -maxdepth 1 -name '*.kt' | wc -l)" -eq 4
 
       - name: Set Gradle distribution network timeout in CI workspace only
         shell: bash

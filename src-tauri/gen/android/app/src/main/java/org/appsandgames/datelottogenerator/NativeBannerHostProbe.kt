@@ -28,9 +28,12 @@ internal class NativeBannerHostProbe(private val activity: Activity) {
             "org.appsandgames.datelottogenerator.levelplaypilot"
         private const val EXTRA_ENABLE =
             "org.appsandgames.datelottogenerator.DEBUG_NATIVE_BANNER_PROBE"
+        private const val EXTRA_NATIVE_ANCHOR =
+            "org.appsandgames.datelottogenerator.DEBUG_NATIVE_ANCHORED_PREVIEW"
     }
 
     private val host = LevelPlayBannerHost(activity)
+    private var anchored: NativeAnchoredBannerProbe? = null
     private var attached = false
 
     fun scheduleIfRequested() {
@@ -162,6 +165,13 @@ internal class NativeBannerHostProbe(private val activity: Activity) {
             if (result == "true") {
                 attached = true
                 Log.i(TAG, "HOST_PROBE=TABLET_PANEL_ATTACHED_NO_ADS")
+                // Separate, mandatory second ADB opt-in. Existing V8.2
+                // tablet HTML preview stays completely unchanged by default.
+                if (activity.intent?.getBooleanExtra(EXTRA_NATIVE_ANCHOR, false) == true) {
+                    anchored = NativeAnchoredBannerProbe(activity).also {
+                        it.start(root, web)
+                    }
+                }
             } else {
                 retryTabletMock(root, attempt)
             }
@@ -176,7 +186,17 @@ internal class NativeBannerHostProbe(private val activity: Activity) {
         root.postDelayed({ attachWhenReady(root, attempt + 1) }, 300L)
     }
 
+    fun pause() {
+        anchored?.pause()
+    }
+
+    fun resume() {
+        anchored?.resume()
+    }
+
     fun detach() {
+        anchored?.release()
+        anchored = null
         host.release()
         attached = false
     }
