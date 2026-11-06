@@ -9,4 +9,5 @@ test('N2 collects portrait, landscape, scroll, IME and app-restore evidence with
     assert.ok(script.includes(token),token);
   }
   assert.doesNotMatch(script,/(?:adb\s+install|adb\s+uninstall|force-stop|logcat.*'-c'|assembleRelease|tauri\s+android\s+build)/i);
+  assert.doesNotMatch(script,/\$pid\b/i,'PowerShell $PID is read-only');
 });
