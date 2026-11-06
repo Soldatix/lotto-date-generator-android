@@ -30,6 +30,8 @@ internal class NativeBannerHostProbe(private val activity: Activity) {
             "org.appsandgames.datelottogenerator.DEBUG_NATIVE_BANNER_PROBE"
         private const val EXTRA_NATIVE_ANCHOR =
             "org.appsandgames.datelottogenerator.DEBUG_NATIVE_ANCHORED_PREVIEW"
+        private const val EXTRA_N5_PORTRAIT_RAIL =
+            "org.appsandgames.datelottogenerator.DEBUG_N5_PORTRAIT_RAIL"
     }
 
     private val host = LevelPlayBannerHost(activity)
@@ -122,6 +124,10 @@ internal class NativeBannerHostProbe(private val activity: Activity) {
 
         // The HTML node is permanently hidden by default. This debug-only
         // injection does not connect to a banner SDK, network, or CMP.
+        // N5 requires a THIRD explicit ADB boolean; ordinary N1/N2 unchanged.
+        val n5Requested =
+            activity.intent?.getBooleanExtra(EXTRA_N5_PORTRAIT_RAIL, false) == true &&
+            activity.intent?.getBooleanExtra(EXTRA_NATIVE_ANCHOR, false) == true
         val script = """
             (function() {
               var slot = document.getElementById('nativeTabletBannerProbe');
@@ -156,9 +162,41 @@ internal class NativeBannerHostProbe(private val activity: Activity) {
               }
               panel.classList.add('tablet-preview-active');
               slot.hidden = false;
+              if (__N5_PORTRAIT_RAIL__) {
+                var grid = panel.closest('.grid');
+                if (!grid) return false;
+                // Only the existing no-ad HTML slot moves; no SDK or ads.
+                var cssId = 'date-lotto-n5-portrait-rail';
+                if (!document.getElementById(cssId)) {
+                  var n5css = document.createElement('style');
+                  n5css.id = cssId;
+                  n5css.textContent =
+                    '@media (orientation: portrait) {' +
+                    '.grid.n5-tablet-portrait-rail>#nativeTabletBannerProbe {' +
+                    'grid-column:1/-1;justify-self:center;align-self:start;' +
+                    'width:320px;max-width:100%;height:50px;' +
+                    'margin:12px auto 0!important;}' +
+                    '}';
+                  document.head.appendChild(n5css);
+                }
+                if (!window.__dateLottoN5RailInstalled) {
+                  window.__dateLottoN5RailInstalled = true;
+                  var syncN5 = function() {
+                    var portrait = window.matchMedia('(orientation: portrait)').matches;
+                    var target = portrait ? grid : panel;
+                    if (slot.parentElement !== target) target.appendChild(slot);
+                    if (portrait) grid.classList.add('n5-tablet-portrait-rail');
+                    else grid.classList.remove('n5-tablet-portrait-rail');
+                    slot.hidden = portrait && grid.getBoundingClientRect().width < 320;
+                  };
+                  window.addEventListener('resize', syncN5);
+                  window.addEventListener('orientationchange', syncN5);
+                  syncN5();
+                }
+              }
               return true;
             })()
-        """.trimIndent()
+        """.trimIndent().replace("__N5_PORTRAIT_RAIL__", n5Requested.toString())
 
         web.evaluateJavascript(script) { result ->
             if (activity.isFinishing || activity.isDestroyed || attached) return@evaluateJavascript

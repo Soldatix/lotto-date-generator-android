@@ -104,8 +104,12 @@ internal class NativeAnchoredBannerProbe(private val activity: Activity) {
             (function() {
               if (location.hostname !== 'tauri.localhost') return null;
               var slot = document.getElementById('nativeTabletBannerProbe');
-              if (!slot || slot.hidden || !slot.closest('.resultBox.tablet-preview-active'))
-                return null;
+              if (!slot || slot.hidden) return null;
+              // Optional third-gated N5 portrait row stays native-geometry-safe.
+              var card = slot.closest('.resultBox.tablet-preview-active');
+              var rail = slot.parentElement &&
+                slot.parentElement.matches('.grid.n5-tablet-portrait-rail');
+              if (!card && !rail) return null;
               var b = slot.getBoundingClientRect();
               var st = getComputedStyle(slot);
               if (st.display === 'none' || st.visibility === 'hidden') return null;
