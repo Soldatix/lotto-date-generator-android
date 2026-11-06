@@ -31,6 +31,7 @@ internal class NativeAnchoredBannerProbe(private val activity: Activity) {
         private const val TAG = "DateLottoNativeAnchor"
         private const val SAMPLE_MS = 450L
         private const val PAGE_HOST = "tauri.localhost"
+        private const val N3_SDK_PLACEMENT_HANDOFF_APPROVED = false
     }
 
     private var root: FrameLayout? = null
@@ -39,7 +40,24 @@ internal class NativeAnchoredBannerProbe(private val activity: Activity) {
     private var enabled = false
     private var paused = false
     private var lastVisible = false
+    private var anchorListener: NativeBannerAnchorListener? = null
     private val ticker = Runnable { sample() }
+
+    /**
+     * Reserved future handoff to an opt-in, review-approved native SDK host.
+     * MainActivity and production never register this listener. No SDK types
+     * are imported here; default N1 still renders the same native TextView.
+     */
+    fun registerPlacementListenerForFutureReview(
+        listener: NativeBannerAnchorListener
+    ) {
+        check(Looper.myLooper() == Looper.getMainLooper())
+        if (activity.packageName != "org.appsandgames.datelottogenerator.levelplaypilot") return
+        if ((activity.applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) == 0) return
+        // Critical: N3 handoff remains compiled but unreachable.
+        if (!N3_SDK_PLACEMENT_HANDOFF_APPROVED) return
+        anchorListener = listener
+    }
 
     fun start(content: FrameLayout, webView: WebView) {
         check(Looper.myLooper() == Looper.getMainLooper())
@@ -160,6 +178,9 @@ internal class NativeAnchoredBannerProbe(private val activity: Activity) {
         params.topMargin = top
         label.layoutParams = params
         label.visibility = View.VISIBLE
+        anchorListener?.onAnchorVisible(
+            NativeBannerAnchorBounds(left, top, width, height)
+        )
         if (!lastVisible) {
             Log.i(TAG, "NATIVE_ANCHOR=ALIGNED_NO_ADS x=$left y=$top w=$width h=$height")
         }
@@ -169,6 +190,7 @@ internal class NativeAnchoredBannerProbe(private val activity: Activity) {
 
     private fun conceal() {
         nativeLabel?.visibility = View.GONE
+        anchorListener?.onAnchorHidden()
         if (lastVisible) Log.i(TAG, "NATIVE_ANCHOR=HIDDEN_OFFSCREEN_OR_SYSTEM_INSET")
         lastVisible = false
     }
@@ -201,6 +223,8 @@ internal class NativeAnchoredBannerProbe(private val activity: Activity) {
             parent.removeView(view)
         }
         nativeLabel = null
+        anchorListener?.onAnchorReleased()
+        anchorListener = null
         web = null
         root = null
         Log.i(TAG, "NATIVE_ANCHOR=RELEASED_NO_ADS")

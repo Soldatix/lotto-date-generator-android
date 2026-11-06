@@ -203,3 +203,41 @@ Kotlin compile-only and static safety checks are required; real Huawei
 device viewport, scroll, keyboard, both orientations, rotation/restoration,
 and failure/fallback evidence must be gathered before considering further work.
 Production NO_GO, PR remains Draft, no merge or real SDK activation.
+
+
+## N3 SDK placement handoff — compile-only; SDK and real ads OFF (2026-11-06)
+
+Huawei CMR-W09 N1 + N2-T verified native TextView alignment in both
+orientations and hiding when the slot exits the visible screen or the
+SwiftKey IME covers it. N3 does **not** request advertising.
+
+The main (SDK-free) module now declares `NativeBannerAnchorBounds`
+(physical **root-local pixels**) and `NativeBannerAnchorListener`
+(visible / hidden / released). `NativeAnchoredBannerProbe` emits those
+events after its existing WebView coordinate, safe-area, system bar and
+keyboard checks. **N3_SDK_PLACEMENT_HANDOFF_APPROVED = false**:
+no listener registration is currently possible, and default N1 TextView
+behavior is unchanged.
+
+The optional `src/levelplayPilot` source set contains
+`LevelPlayNativeBannerPlacementDraft`, compiled against real Android
+Unity LevelPlay SDK 9.5.0, with
+**N3_REAL_BANNER_MOUNT_APPROVED = false**. This adapter would be able to
+accept an already created/initialized `LevelPlayBannerAdView` and map
+the approved geometry to a native FrameLayout child; it **never** creates
+a banner, calls `LevelPlay.init`, requests an ad or claims to implement
+a CMP. It is not constructed or referenced by MainActivity.
+
+The SDK reports `LevelPlayAdSize.BANNER` as 320×50 dp. A smaller HTML
+anchor cannot safely host a standard banner; the draft **hides** instead
+of scaling, clipping or overlapping app controls. The Huawei portrait
+right panel (~298 CSS px) therefore needs future adaptive-size negotiation
+or layout redesign before a real banner could be shown there. Official
+SDK documentation also requires SDK initialization before banner creation.
+Do not assume HTML placeholder compatibility equals real banner readiness.
+
+N3 CI compile-only test copies 6 Kotlin source files into an isolated
+Android library module: SDK-free host, tablet probe, anchor, shared geometry
+contract, dormant SDK integration draft and N3 adapter. No APK or AAB is
+built by CI. PR remains Draft, no production writes, no SDK/ad init,
+no identifiers/keys, `REAL_ADS=OFF`, `PRODUCTION_NO_GO=TRUE`.

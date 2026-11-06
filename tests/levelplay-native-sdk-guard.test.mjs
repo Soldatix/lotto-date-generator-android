@@ -214,3 +214,32 @@ test('Anchored native debug-only view requires two ADB opt-ins and does not acce
   assert.match(main,/nativeHostProbe\?\.detach\(\)/);
   assert.doesNotMatch(main,/LevelPlaySdkBannerDraft|reserveBottomStripAfterReview|startAfterVerifiedConsent/);
 });
+
+test('N3 SDK placement adapter shares exact native geometry but remains fail-closed', () => {
+  const bounds = read('src-tauri/gen/android/app/src/main/java/org/appsandgames/datelottogenerator/NativeBannerAnchorBounds.kt');
+  const native = read('src-tauri/gen/android/app/src/main/java/org/appsandgames/datelottogenerator/NativeAnchoredBannerProbe.kt');
+  const draft = read('src-tauri/gen/android/app/src/levelplayPilot/java/org/appsandgames/datelottogenerator/LevelPlayNativeBannerPlacementDraft.kt');
+  const wf = read('.github/workflows/levelplay-android-kotlin-compile.yml');
+  assert.match(bounds, /data class NativeBannerAnchorBounds/);
+  assert.match(bounds, /interface NativeBannerAnchorListener/);
+  assert.match(native, /N3_SDK_PLACEMENT_HANDOFF_APPROVED = false/);
+  assert.match(native, /if \(!N3_SDK_PLACEMENT_HANDOFF_APPROVED\) return/);
+  assert.match(native, /NativeBannerAnchorBounds\(left, top, width, height\)/);
+  assert.match(native, /anchorListener\?\.onAnchorHidden\(\)/);
+  assert.match(native, /anchorListener\?\.onAnchorReleased\(\)/);
+  assert.match(draft, /N3_REAL_BANNER_MOUNT_APPROVED = false/);
+  assert.match(draft, /if \(!N3_REAL_BANNER_MOUNT_APPROVED\) return false/);
+  assert.match(draft, /if \(!N3_REAL_BANNER_MOUNT_APPROVED \|\| !mounted\) return/);
+  assert.match(draft, /if \(!N3_REAL_BANNER_MOUNT_APPROVED\) return/);
+  assert.match(draft, /LevelPlayAdSize\.BANNER\.width/);
+  assert.match(draft, /LevelPlayAdSize\.BANNER\.height/);
+  assert.match(draft, /bounds\.widthPx < standardWidthPx/);
+  assert.match(draft, /bounds\.heightPx < standardHeightPx/);
+  assert.match(draft, /sdkInitialized: Boolean/);
+  assert.match(draft, /verifiedConsent: Boolean/);
+  assert.doesNotMatch(draft, /LevelPlay\.init\(|\.loadAd\(|setGDPRConsent\(|addJavascriptInterface/);
+  assert.doesNotMatch(main, /LevelPlayNativeBannerPlacementDraft/);
+  assert.match(wf, /LevelPlayNativeBannerPlacementDraft\.kt/);
+  assert.match(wf, /NativeBannerAnchorBounds\.kt/);
+  assert.match(wf, /-eq 6/);
+});
