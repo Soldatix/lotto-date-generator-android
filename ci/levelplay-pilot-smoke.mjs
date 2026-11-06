@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
 import { chromium } from 'playwright';
 
 const base = 'http://127.0.0.1:4173/';
@@ -163,6 +164,64 @@ try {
     }
   }
   console.log('PASS: V8.2 responsive tablet mock 8 viewport matrix, no result/history overlap');
+
+  // N5: evaluate the EXACT JS embedded in the Kotlin Android debug host.
+  // Uses synthetic Tauri and ADB-third-flag substitution in Chromium tests
+  // only; production apps and ordinary N1/N2 launches never activate it.
+  const n5Kotlin=readFileSync(new URL('../src-tauri/gen/android/app/src/main/java/org/appsandgames/datelottogenerator/NativeBannerHostProbe.kt',import.meta.url),'utf8');
+  const n5Match=n5Kotlin.match(/val script = """([\s\S]*?)"""\.trimIndent\(\)\.replace\("__N5_PORTRAIT_RAIL__", n5Requested\.toString\(\)\)/);
+  assert.ok(n5Match,'Expected Android Kotlin N5 debug JS source');
+  const noAdsJavaScript=n5Match[1].replace('__N5_PORTRAIT_RAIL__','true');
+  const defaultJavaScript=n5Match[1].replace('__N5_PORTRAIT_RAIL__','false');
+
+  await page.setViewportSize({width:640,height:1024});
+  await page.reload();
+  assert.equal(await page.evaluate(source=>window.eval(source),defaultJavaScript),true);
+  assert.equal(await page.locator('#nativeTabletBannerProbe').evaluate(el=>el.parentElement.classList.contains('resultBox')),true);
+  assert.equal(await page.evaluate(()=>Boolean(window.__dateLottoN5RailInstalled)),false);
+  console.log('PASS: N5 default disabled leaves original portrait in-panel slot unchanged');
+
+  await page.reload();
+  assert.equal(await page.evaluate(source=>window.eval(source),noAdsJavaScript),true);
+  let n5=await page.evaluate(()=>{
+    const slot=document.getElementById('nativeTabletBannerProbe');
+    const cards=Array.from(document.querySelectorAll('.grid>.card')).map(x=>x.getBoundingClientRect().toJSON());
+    const r=slot.getBoundingClientRect();
+    return {parent:slot.parentElement.className,width:r.width,top:r.top,bottom:r.bottom,
+      cardBottom:Math.max(...cards.map(x=>x.bottom)),hidden:slot.hidden,
+      viewport:innerWidth,scroll:scrollY};
+  });
+  assert.match(n5.parent,/n5-tablet-portrait-rail/);
+  assert.equal(n5.hidden,false);
+  assert.ok(n5.width>=319 && n5.width<=321,'N5 640px portrait must reserve full 320 CSS px');
+  assert.ok(n5.top >= n5.cardBottom - 1,'Portrait rail must follow BOTH app cards in normal flow');
+  console.log('PASS: N5 640x1024 portrait full-width rail preserves results and controls');
+
+  await page.setViewportSize({width:1024,height:640});
+  await page.waitForFunction(()=>{
+    const slot=document.getElementById('nativeTabletBannerProbe');
+    return innerWidth===1024 && slot.parentElement.classList.contains('resultBox');
+  });
+  assert.equal(await page.locator('#nativeTabletBannerProbe').isHidden(),false);
+  console.log('PASS: N5 landscape rotates back to original right-panel reservation');
+
+  await page.setViewportSize({width:480,height:800});
+  await page.waitForFunction(()=>{
+    const slot=document.getElementById('nativeTabletBannerProbe');
+    return innerWidth===480 && slot.parentElement.classList.contains('grid');
+  });
+  n5=await page.locator('#nativeTabletBannerProbe').boundingBox();
+  assert.ok(n5 && n5.width>=319 && n5.width<=321,'N5 480px portrait should fit 320px');
+  console.log('PASS: N5 narrow portrait 480x800 supports full standard banner width');
+
+  await page.setViewportSize({width:300,height:650});
+  await page.waitForFunction(()=>{
+    const slot=document.getElementById('nativeTabletBannerProbe');
+    return innerWidth===300 && slot.hidden;
+  });
+  assert.equal(await page.locator('#nativeTabletBannerProbe').isHidden(),true);
+  assert.equal(blocked.filter(x=>/unity|ironsource|levelplay|admob|applovin/i.test(x)).length,0);
+  console.log('PASS: N5 300px screen fails closed: banner mock hidden; no ad requests');
 
   await androidTauri.context.close();
   console.log('PASS: tiny screens hide mock, demo consent never persisted and zero ad-network requests');
