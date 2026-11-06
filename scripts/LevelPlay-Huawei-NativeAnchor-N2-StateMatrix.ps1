@@ -59,14 +59,14 @@ $pilotBefore=@($before -split '\r?\n' | Where-Object {
     $_.Trim() -eq "package:$testPkg"
 }).Count -eq 1
 if(-not $pilotBefore){throw 'PILOT_PACKAGE_NOT_INSTALLED'}
-$pid=(Device @('shell','pidof','-s',$testPkg')).Trim()
-if($pid -notmatch '^\d+$'){throw 'N1_PILOT_MUST_ALREADY_BE_RUNNING'}
-$baseline=Device @('logcat','-d','-v','brief',"--pid=$pid",'-t','3000',
+$appPid=(Device @('shell','pidof','-s',$testPkg')).Trim()
+if($appPid -notmatch '^\d+$'){throw 'N1_PILOT_MUST_ALREADY_BE_RUNNING'}
+$baseline=Device @('logcat','-d','-v','brief',"--pid=$appPid",'-t','3000',
  '-s','DateLottoNativeAnchor:V','DateLottoNativeHost:V','*:S')
 if($baseline -notmatch 'NATIVE_ANCHOR=STARTED_NO_ADS'){
     throw 'NATIVE_ANCHOR_NOT_STARTED_IN_CURRENT_PROCESS'
 }
-Write-Output "HUAWEI_DEVICE=PASS; N1_CURRENT_PID=$pid"
+Write-Output "HUAWEI_DEVICE=PASS; N1_CURRENT_PID=$appPid"
 New-Item -ItemType Directory -Path $report | Out-Null
 $rows=New-Object System.Collections.Generic.List[object]
 
@@ -74,7 +74,7 @@ function Snapshot {
     param([string]$Name)
     Start-Sleep -Seconds 2
     $currentPid=(Device @('shell','pidof','-s',$testPkg')).Trim()
-    $same=$currentPid -eq $pid
+    $same=$currentPid -eq $appPid
     $remote="/sdcard/Download/DateLotto-$Name-$stamp.png"
     $local=Join-Path $report "$Name.png"
     $null=Device @('shell','screencap','-p',$remote)
@@ -85,7 +85,7 @@ function Snapshot {
     }
     $logs=''
     if($same){
-        $logs=Device @('logcat','-d','-v','time',"--pid=$pid",'-t','3000',
+        $logs=Device @('logcat','-d','-v','time',"--pid=$appPid",'-t','3000',
             '-s','DateLottoNativeAnchor:V','DateLottoNativeHost:V','*:S')
     }
     [System.IO.File]::WriteAllText(
