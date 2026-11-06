@@ -59,7 +59,7 @@ $pilotBefore=@($before -split '\r?\n' | Where-Object {
     $_.Trim() -eq "package:$testPkg"
 }).Count -eq 1
 if(-not $pilotBefore){throw 'PILOT_PACKAGE_NOT_INSTALLED'}
-$appPid=(Device @('shell','pidof','-s',$testPkg')).Trim()
+$appPid=(Device @('shell','pidof','-s',$testPkg)).Trim()
 if($appPid -notmatch '^\d+$'){throw 'N1_PILOT_MUST_ALREADY_BE_RUNNING'}
 $baseline=Device @('logcat','-d','-v','brief',"--pid=$appPid",'-t','3000',
  '-s','DateLottoNativeAnchor:V','DateLottoNativeHost:V','*:S')
@@ -73,7 +73,7 @@ $rows=New-Object System.Collections.Generic.List[object]
 function Snapshot {
     param([string]$Name)
     Start-Sleep -Seconds 2
-    $currentPid=(Device @('shell','pidof','-s',$testPkg')).Trim()
+    $currentPid=(Device @('shell','pidof','-s',$testPkg)).Trim()
     $same=$currentPid -eq $appPid
     $remote="/sdcard/Download/DateLotto-$Name-$stamp.png"
     $local=Join-Path $report "$Name.png"

@@ -10,4 +10,6 @@ test('N2 collects portrait, landscape, scroll, IME and app-restore evidence with
   }
   assert.doesNotMatch(script,/(?:adb\s+install|adb\s+uninstall|force-stop|logcat.*'-c'|assembleRelease|tauri\s+android\s+build)/i);
   assert.doesNotMatch(script,/\$pid\b/i,'PowerShell $PID is read-only');
+  assert.equal((script.match(/\(Device @\('shell','pidof','-s',\$testPkg\)\)\.Trim\(\)/g)||[]).length,2,'both pidof invocations must parse as PowerShell');
+  assert.doesNotMatch(script,/\$testPkg'\)\)/,'stray quote after package variable breaks PowerShell parser');
 });

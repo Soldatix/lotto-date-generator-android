@@ -11,6 +11,7 @@ on:
       - index.html
       - src/**
       - tests/**
+      - scripts/**
       - ci/**
       - package*.json
       - vite.config.mjs
@@ -30,6 +31,24 @@ jobs:
         with:
           node-version: '22'
           cache: npm
+      - name: Parse N2 script with PowerShell parser (no device, no execution)
+        shell: pwsh
+        run: |
+          $path = 'scripts/LevelPlay-Huawei-NativeAnchor-N2-StateMatrix.ps1'
+          $tokens = $null
+          $parseErrors = $null
+          [void][System.Management.Automation.Language.Parser]::ParseFile(
+            (Resolve-Path -LiteralPath $path).Path,
+            [ref]$tokens,
+            [ref]$parseErrors
+          )
+          if ($parseErrors.Count -gt 0) {
+            foreach ($issue in $parseErrors) {
+              Write-Host ("Line " + $issue.Extent.StartLineNumber + ": " + $issue.Message)
+            }
+            throw 'N2_POWERSHELL_SYNTAX_FAILED'
+          }
+          Write-Host 'N2_POWERSHELL_SYNTAX=PASS'
       - name: Install locked dependencies
         run: npm ci
       - name: Production build (also creates PWA service worker)
