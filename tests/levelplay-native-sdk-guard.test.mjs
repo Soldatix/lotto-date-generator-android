@@ -18,7 +18,8 @@ test('Gradle production builds exclude LevelPlay SDK and opt-in sources', () => 
 });
 test('SDK Kotlin implementation is dormant behind a separate hard stop', () => {
   assert.match(sdk, /private const val APPROVED_AD_REQUESTS = false/);
-  assert.match(sdk, /if \(!APPROVED_AD_REQUESTS \|\| !consentGranted/);
+  assert.match(sdk, /if \(!APPROVED_AD_REQUESTS \|\|/);
+  assert.match(sdk, /!consentGranted \|\|/);
   assert.doesNotMatch(sdk, /LevelPlayPrivacySettings\.setGDPRConsent\(true\)/);
   assert.match(sdk, /N4ConsentGateDraft\.sdkInitializationPermitted\(N4CmpEvidence\(\)\)/);
   assert.match(sdk, /LevelPlay\.init\(activity, request,/);
@@ -232,17 +233,17 @@ test('N3 SDK placement adapter shares exact native geometry but remains fail-clo
   assert.match(draft, /if \(!N3_REAL_BANNER_MOUNT_APPROVED\) return false/);
   assert.match(draft, /if \(!N3_REAL_BANNER_MOUNT_APPROVED \|\| !mounted\) return/);
   assert.match(draft, /if \(!N3_REAL_BANNER_MOUNT_APPROVED\) return/);
-  assert.match(draft, /LevelPlayAdSize\.BANNER\.width/);
-  assert.match(draft, /LevelPlayAdSize\.BANNER\.height/);
-  assert.match(draft, /bounds\.widthPx < standardWidthPx/);
-  assert.match(draft, /bounds\.heightPx < standardHeightPx/);
+  assert.match(draft, /selectedSize\.width/);
+  assert.match(draft, /selectedSize\.height/);
+  assert.match(draft, /N4BannerSizeFitPolicy\.fit/);
+  assert.match(draft, /if \(placement == null\)/);
   assert.match(draft, /sdkInitialized: Boolean/);
   assert.match(draft, /verifiedConsent: Boolean/);
   assert.doesNotMatch(draft, /LevelPlay\.init\(|\.loadAd\(|setGDPRConsent\(|addJavascriptInterface/);
   assert.doesNotMatch(main, /LevelPlayNativeBannerPlacementDraft/);
   assert.match(wf, /LevelPlayNativeBannerPlacementDraft\.kt/);
   assert.match(wf, /NativeBannerAnchorBounds\.kt/);
-  assert.match(wf, /-eq 6/);
+  assert.match(wf, /-eq 8/);
 });
 
 

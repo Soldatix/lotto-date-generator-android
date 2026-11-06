@@ -241,3 +241,74 @@ Android library module: SDK-free host, tablet probe, anchor, shared geometry
 contract, dormant SDK integration draft and N3 adapter. No APK or AAB is
 built by CI. PR remains Draft, no production writes, no SDK/ad init,
 no identifiers/keys, `REAL_ADS=OFF`, `PRODUCTION_NO_GO=TRUE`.
+
+
+## N4 adaptive size + CMP privacy design, strictly compile-only (2026-11-06)
+
+Source verification: Unity Android LevelPlay banner integration:
+https://docs.unity.com/en-us/grow/levelplay/sdk/android/banner-integration
+Unity GDPR/US state configuration:
+https://docs.unity.com/en-us/grow/levelplay/sdk/android/regulation-advanced-settings
+Unity mediation privacy guidance:
+https://docs.unity.com/grow/levelplay/platform/legal-resources/ironsource-gdpr-compliance
+Optional compatible CMP example (Google UMP):
+https://developers.google.com/admob/android/privacy
+
+### Placement and tablet-size policy
+
+The LevelPlay Android SDK 9.5.0 adaptive-size factory can choose a
+device-width-based creative. This DOES NOT ensure the creative fits
+the narrower Date Lotto result panel, especially in portrait.
+Standard BANNER is 320x50 dp. A tablet adaptive banner may use
+the much wider 728x90dp leaderboard instead. A 298dp right column
+cannot safely contain even the standard 320dp format.
+
+N4BannerSizeFitPolicy.kt is SDK-free pure Kotlin: it uses the
+already-validated root-local N1 anchor coordinates in physical pixels,
+the selected SDK size in dp, device density, and Android root bounds.
+It returns a centered placement ONLY when the full size fits;
+otherwise NULL. Never stretch, crop, squeeze, render offscreen or
+overlap lottery controls. JUnit tests cover a 320x50dp Huawei
+landscape PASS; portrait 298dp FAIL; 728x90dp adaptive FAIL;
+300x45dp candidate fit without scaling; invalid density and
+outside-root checks. This is a pure size compatibility check,
+not proof of demand/network-specific adaptive behavior.
+
+The optional LevelPlayNativeBannerPlacementDraft.kt now refers to
+this shared fit policy and type-checks the SDK adaptive-size API.
+N4_ADAPTIVE_SIZE_NEGOTIATION_APPROVED remains FALSE: it cannot
+activate or select an adaptive size on the Android device.
+N3_REAL_BANNER_MOUNT_APPROVED remains FALSE; neither source
+mounts a live ad or starts an SDK. No APK, AAB, ad requests or
+SDK startup are executed by N4 CI.
+
+### CMP and privacy architecture, not a deployed consent mechanism
+
+N4ConsentGateDraft.kt is in the isolated optional SDK source set.
+It contains a data-only mock evidence snapshot requiring:
+- CMP status refreshed on this app launch;
+- the chosen CMP/platform outcome and canRequestAds decision;
+- reviewed mediated networks, purposes, and audience/age policies;
+- an accessible privacy-options entry point and withdrawal handling.
+
+The separate N4_SDK_START_REVIEW_APPROVED flag is FALSE;
+sdkInitializationPermitted() returns FALSE even for a synthetic
+all-positive snapshot. There is no actual CMP SDK, consent dialog,
+user-data persistence, vendor string, Google/AdMob ID or network
+request. This module does not grant legal permission by itself.
+
+The earlier dormant SDK draft contained a hard-coded
+setGDPRConsent(true) statement. N4 removes it: true is NOT proof
+that the publisher has gathered appropriate legal consent.
+A future consent implementation will require separate
+market/audience/purpose/network/CMP, data-safety, privacy-notice,
+policy, test-device and publisher legal review. Unity documents
+compatible CMP consent propagation. If UMP is selected, Google
+requires a fresh update on each app launch, appropriate forms
+and privacy options when required, and checking canRequestAds.
+Denial and withdrawal must not cause silent SDK startup.
+
+N4 checks are compile-only and pure JVM JUnit unit tests.
+The production package is unchanged; ordinary debug builds
+still omit the opt-in LevelPlay SDK source set.
+PR #2 remains Draft, REAL_ADS=OFF, PRODUCTION_NO_GO=TRUE.
