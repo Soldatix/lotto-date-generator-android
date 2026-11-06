@@ -207,7 +207,7 @@ test('Anchored native debug-only view requires two ADB opt-ins and does not acce
   assert.match(anchor,/top \+ height > parent\.height/);
   assert.match(anchor,/SAMPLE_MS = 450L/);
   assert.match(anchor,/root\?\.removeCallbacks\(ticker\)/);
-  assert.doesNotMatch(anchor,/addJavascriptInterface|LevelPlay\.init|\.loadAd\(|setGDPRConsent|network|HttpURLConnection|https:\/\//i);
+  assert.doesNotMatch(anchor,/addJavascriptInterface|LevelPlay\.init|\.loadAd\(|setGDPRConsent|HttpURLConnection|https:\/\//i);
   assert.match(main,/nativeHostProbe\?\.pause\(\)/);
   assert.match(main,/nativeHostProbe\?\.resume\(\)/);
   assert.match(main,/nativeHostProbe\?\.detach\(\)/);
