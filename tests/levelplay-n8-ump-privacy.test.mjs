@@ -51,7 +51,7 @@ test("N8 no-prompt Huawei runner reuses verified local N7 ID and never activates
  assert.doesNotMatch(runner,/function RunBuild\(\[string\[\]\]\$Args\b/);
  assert.doesNotMatch(runner,/Start-Process\s+-FilePath\s+\$npm|\.WaitForExit\(/);
  assert.match(runner,/\$null -eq \$nativeExit -or \$nativeExit -ne 0/);
- assert.match(runner,/node_modules\\\\\.package-lock\.json/);
+ assert.match(runner,/node_modules\\\.package-lock\.json/);
 
  assert.match(runner,/\$sourceSha='65ABEF8ED904BB808A10C5012175E69AA2D06645AED395E89F8A908CBE4EB6A1'/);
 });
