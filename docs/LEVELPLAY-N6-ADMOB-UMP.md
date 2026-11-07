@@ -36,14 +36,20 @@ REAL_ADS=OFF; SDK_INIT=OFF; PRODUCTION_NO_GO=TRUE.
 
 - OPPO individual developer verification: still "Approving" per latest user
   report, reminder emailed on 2026-11-06. No confirmation received here.
-- AdMob account exists/approved: UNKNOWN. User has not confirmed.
-- An AdMob Android app identity / App ID: UNKNOWN / NOT PROVIDED.
-- AdMob Privacy & messaging form: NOT VERIFIED.
+- AdMob account: EXISTS, account approval PENDING at last user dashboard check.
+- AdMob Android app "Date Lotto Generator": CREATED (unpublished).
+- Android AdMob App ID: available from the user's dashboard; intentionally
+  not embedded in source, manifests or logs.
+- Android AdMob European regulations message: created, saved as DRAFT
+  (not demonstrated as published). Separate from AdSense website CMP.
 - Google demand and all LevelPlay mediated partners: NOT VERIFIED.
 - Privacy notice/age audience options: NOT VERIFIED for ads.
 - Google Play or OPPO public app listing: NOT VERIFIED.
-- No fictional app IDs, consent strings, network IDs or test-device hashes
-  are present in code or this document.
+- Unity LevelPlay Android app and Banner unit already CREATED. OPPO Find X5
+  Lite registered for Unity test ads. Unity key and Banner ID are held
+  outside public source. Google UMP test registration is a separate system.
+- No publisher keys, IDs, consent strings or test-device hashes are committed
+  to the Android source.
 
 ## N6 actual implementation
 
