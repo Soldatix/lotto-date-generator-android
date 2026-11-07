@@ -72,6 +72,47 @@ if (n9ReviewOnly &&
     throw GradleException("N9_PRIVATE_ADMOB_APP_ID_REQUIRED")
 }
 
+// N12 real-banner code is separate from the old N9 compile-only bridge.
+// The new Activity exists only in a specially opted-in DEBUG APK. No build
+// ever enables ad requests just because N12 sources are compiled.
+val n12BannerPilot = providers.gradleProperty("appsGamesN12LottoBannerPilot")
+    .orNull?.equals("true", ignoreCase = true) == true
+if (n12BannerPilot && (n7UmpPreview || levelPlaySdkPilot || n9ReviewOnly)) {
+    throw GradleException("N12_SEPARATE_ISOLATED_DEBUG_ONLY")
+}
+if (n12BannerPilot && gradle.startParameter.taskNames.any {
+        it.contains("release", ignoreCase = true) ||
+        it.contains("publish", ignoreCase = true) ||
+        it.contains("bundle", ignoreCase = true)
+    }) {
+    throw GradleException("N12_PRODUCTION_NO_GO: no release or bundles")
+}
+val n12AdMobAppId = if (n12BannerPilot)
+    providers.environmentVariable("APPSGAMES_N7_ADMOB_APP_ID").orNull?.trim().orEmpty()
+    else ""
+if (n12BannerPilot &&
+    !Regex("""ca-app-pub-\d{16}~\d{10}""").matches(n12AdMobAppId)) {
+    throw GradleException("N12_PRIVATE_ADMOB_APP_ID_REQUIRED")
+}
+val n12AppKey = if (n12BannerPilot)
+    providers.environmentVariable("APPSGAMES_N12_LEVELPLAY_APP_KEY").orNull?.trim().orEmpty()
+    else ""
+val n12BannerUnitId = if (n12BannerPilot)
+    providers.environmentVariable("APPSGAMES_N12_LEVELPLAY_BANNER_UNIT_ID").orNull?.trim().orEmpty()
+    else ""
+val n12ApprovedTest = n12BannerPilot &&
+    providers.environmentVariable("APPSGAMES_N12_OWNER_TEST_APPROVAL").orNull ==
+        "ENABLE_N12_HUAWEI_ONE_TEST_BANNER"
+if (n12BannerPilot &&
+    ((n12AppKey.isNotEmpty() && !Regex("""[A-Za-z0-9_-]{6,128}""").matches(n12AppKey)) ||
+     (n12BannerUnitId.isNotEmpty() &&
+        !Regex("""[A-Za-z0-9_-]{6,128}""").matches(n12BannerUnitId)))) {
+    throw GradleException("N12_LEVELPLAY_CREDENTIAL_FORMAT_INVALID")
+}
+if (n12ApprovedTest && (n12AppKey.isBlank() || n12BannerUnitId.isBlank())) {
+    throw GradleException("N12_TEST_APPROVAL_REQUIRES_APP_KEY_AND_BANNER_UNIT")
+}
+
 // DATE_LOTTO_RELEASE_SIGNING
 val keystorePropertiesFile =
     rootProject.file("keystore.properties")
@@ -168,6 +209,21 @@ android {
         sourceSets.getByName("debug").manifest.srcFile("src/n7ConsentPilot/AndroidManifest.xml")
         buildTypes.getByName("debug").manifestPlaceholders["appsGamesN7AdMobAppId"] = n7AdMobAppId
     }
+    if (n12BannerPilot) {
+        sourceSets.getByName("debug").java.srcDir("src/n12BannerPilot/java")
+        sourceSets.getByName("debug").manifest.srcFile("src/n12BannerPilot/AndroidManifest.xml")
+        buildTypes.getByName("debug").manifestPlaceholders["appsGamesN12AdMobAppId"] =
+            n12AdMobAppId
+        buildTypes.getByName("debug").buildConfigField(
+            "boolean", "N12_OWNER_TEST_AD_REQUESTS_APPROVED", n12ApprovedTest.toString()
+        )
+        buildTypes.getByName("debug").buildConfigField(
+            "String", "N12_APP_KEY", "\"$n12AppKey\""
+        )
+        buildTypes.getByName("debug").buildConfigField(
+            "String", "N12_BANNER_UNIT_ID", "\"$n12BannerUnitId\""
+        )
+    }
     if (n9ReviewOnly) {
         // Both sources exist ONLY in the isolated review DEBUG APK.
         // MainActivity remains untouched, and no SDK class is instantiated.
@@ -199,6 +255,10 @@ dependencies {
     if (n7UmpPreview) {
         // Consent-only debug activity; deliberately no LevelPlay dependency.
         implementation("com.google.android.ump:user-messaging-platform:4.0.0")
+    }
+    if (n12BannerPilot) {
+        implementation("com.google.android.ump:user-messaging-platform:4.0.0")
+        implementation("com.unity3d.ads-mediation:mediation-sdk:9.5.0")
     }
     if (n9ReviewOnly) {
         // Linkage/consent review ONLY; never install or start without separate
