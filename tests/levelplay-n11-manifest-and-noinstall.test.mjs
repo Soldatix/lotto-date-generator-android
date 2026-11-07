@@ -7,6 +7,7 @@ const manifestWorkflow=read('.github/workflows/levelplay-n11-manifest-audit.yml'
 const webWorkflow=read('.github/workflows/web-pwa-settings-check.yml');
 const auditGradle=read('ci/android-levelplay-manifest-audit/build.gradle.kts');
 const manifestReview=read('ci/android-levelplay-manifest-audit/review_merged_manifests.py');
+const providerAudit=read('ci/android-levelplay-manifest-audit/inspect_lifecycle_providers.py');
 const n11=read('scripts/LevelPlay-N11-CombinedSDK-DebugBuild-NoInstall.ps1');
 const appGradle=read('src-tauri/gen/android/app/build.gradle.kts');
 
@@ -52,4 +53,16 @@ test('N11 no-prompt physical API37 APK construction never installs or starts SDK
   assert.doesNotMatch(n11,/\b(?:loadAd|LevelPlay\.init|uninstall|bundleRelease|--release)\s*\(/);
   assert.match(webWorkflow,/N11_POWERSHELL_SYNTAX=PASS/);
   assert.match(appGradle,/N9_PRODUCTION_NO_GO/);
+});
+
+test('N11-B statically inventories SDK 9.5 lifecycle provider onCreate without runtime',()=>{
+  for(const value of [
+    'IronsourceLifecycleProvider','LevelPlayActivityLifecycleProvider',
+    'onCreate();', 'javap', 'subprocess.run',
+    'N11_B_STATIC_PROVIDER_BYTECODE_INVENTORY=PASS',
+    'N11_B_PRECONSENT_PROVIDER_SAFETY=REQUIRES_REVIEW',
+    'N11_B_NO_APK_NO_INSTALL_NO_SDK_EXECUTION_NO_AD_REQUESTS=TRUE'
+  ])assert.ok(providerAudit.includes(value),value);
+  assert.match(manifestWorkflow,/inspect_lifecycle_providers\.py/);
+  assert.doesNotMatch(providerAudit,/adb|loadAd\(|LevelPlay\.init\(|Read-Host|http\.client|requests\.get/);
 });
