@@ -111,8 +111,8 @@ if((Device -Arguments @('shell','getprop','ro.product.model')) -ne 'CMR-W09' -or
 Write-Output 'DEVICE=HUAWEI_CMR-W09_API28_PASS'
 
 # Wait for npm parent process only (Start-Process -Wait could hang on Gradle descendants).
-function RunBuild([string[]]$Args,[int]$TimeoutMs) {
-    $p=Start-Process -FilePath $npm -ArgumentList $Args -NoNewWindow -PassThru
+function RunBuild([string[]]$CommandArgs,[int]$TimeoutMs) {
+    $p=Start-Process -FilePath $npm -ArgumentList $CommandArgs -NoNewWindow -PassThru
     if(-not $p.WaitForExit($TimeoutMs)){
         try { $p.Kill() } catch {}
         throw 'N8_BUILD_PROCESS_TIMEOUT'
@@ -134,9 +134,9 @@ try {
     Push-Location -LiteralPath $repo
     try {
         Write-Output 'N8_NPM_CI=START'
-        RunBuild -Args @('ci','--no-audit','--no-fund') -TimeoutMs 600000
+        RunBuild -CommandArgs @('ci','--no-audit','--no-fund') -TimeoutMs 600000
         Write-Output 'N8_NPM_CI=PASS; N8_BUILD=START'
-        RunBuild -Args @('run','tauri','--','android','build','--debug','--apk','--ci','--target','aarch64') -TimeoutMs 900000
+        RunBuild -CommandArgs @('run','tauri','--','android','build','--debug','--apk','--ci','--target','aarch64') -TimeoutMs 900000
         Write-Output 'N8_APK_BUILD=PASS'
     } finally {Pop-Location}
 } finally {
