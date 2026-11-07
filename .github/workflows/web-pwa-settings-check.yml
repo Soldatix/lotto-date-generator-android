@@ -49,6 +49,24 @@ jobs:
             throw 'N2_POWERSHELL_SYNTAX_FAILED'
           }
           Write-Host 'N2_POWERSHELL_SYNTAX=PASS'
+      - name: Parse N7 Huawei consent-only PowerShell script (no execution)
+        shell: pwsh
+        run: |
+          $path = 'scripts/LevelPlay-Huawei-N7-UMP-FormOnly.ps1'
+          $tokens = $null
+          $parseErrors = $null
+          [void][System.Management.Automation.Language.Parser]::ParseFile(
+            (Resolve-Path -LiteralPath $path).Path,
+            [ref]$tokens,
+            [ref]$parseErrors
+          )
+          if ($parseErrors.Count -gt 0) {
+            foreach ($issue in $parseErrors) {
+              Write-Host ("Line " + $issue.Extent.StartLineNumber + ": " + $issue.Message)
+            }
+            throw 'N7_POWERSHELL_SYNTAX_FAILED'
+          }
+          Write-Host 'N7_POWERSHELL_SYNTAX=PASS'
       - name: Install locked dependencies
         run: npm ci
       - name: Production build (also creates PWA service worker)

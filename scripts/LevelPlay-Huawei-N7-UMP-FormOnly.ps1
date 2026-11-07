@@ -14,7 +14,6 @@ $adb = Join-Path $sdk 'platform-tools\adb.exe'
 $java = Join-Path $env:ProgramFiles 'Android\Android Studio\jbr'
 $ndk = Join-Path $sdk 'ndk\30.0.16248370'
 $report = Join-Path $env:USERPROFILE ('Downloads\DateLotto-N7-UMP-'+(Get-Date -Format 'yyyyMMdd-HHmmss'))
-$old = @{}
 Write-Output '=== DATE LOTTO N7 HUAWEI UMP FORM ONLY ==='
 Write-Output 'LEVELPLAY=OFF; AD_REQUESTS=OFF; PRODUCTION_NO_GO=TRUE'
 Write-Output 'DEBUG_ONLY=TRUE; N7_UMP_NETWORK_CALL=OPT_IN'
@@ -186,7 +185,7 @@ if($launch -notmatch 'Status:\s*ok'){throw 'N7_ACTIVITY_LAUNCH_FAILED'}
 Start-Sleep -Seconds 4
 $logs=Adb @('logcat','-d','-v','brief','-t','1200','-s','DateLottoN7UMP:V','*:S')
 [IO.File]::WriteAllText((Join-Path $report 'N7-UMP-generic-logs.txt'),$logs,
-    (New-Object Text.UTF8Encoding($false)))
+    (New-Object System.Text.UTF8Encoding($false)))
 $remote='/sdcard/Download/DateLotto-N7-UMP.png'
 $null=Adb @('shell','screencap','-p',$remote)
 $null=Adb @('pull',$remote,(Join-Path $report 'N7-UMP-screen.png'))
