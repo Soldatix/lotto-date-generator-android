@@ -243,7 +243,7 @@ test('N3 SDK placement adapter shares exact native geometry but remains fail-clo
   assert.doesNotMatch(main, /LevelPlayNativeBannerPlacementDraft/);
   assert.match(wf, /LevelPlayNativeBannerPlacementDraft\.kt/);
   assert.match(wf, /NativeBannerAnchorBounds\.kt/);
-  assert.match(wf, /-eq 12/);
+  assert.match(wf, /-eq 13/);
 });
 
 
@@ -269,6 +269,6 @@ test('N4 adaptive geometry and CMP gate remain fail-closed and SDK isolated',()=
   assert.match(cmp,/withdrawalHandlingReviewed/);
   assert.doesNotMatch(cmp,/LevelPlay\.init\(|\.loadAd\(|UserMessagingPlatform|SharedPreferences/);
   assert.match(wf,/testDebugUnitTest/);
-  assert.match(wf,/-eq 12/);
+  assert.match(wf,/-eq 13/);
   assert.doesNotMatch(main,/N4ConsentGateDraft|LevelPlayNativeBannerPlacementDraft/);
 });
