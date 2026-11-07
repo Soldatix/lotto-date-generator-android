@@ -38,7 +38,7 @@ test('N7 preview demands exact debug package and explicit ADB Intent extra',()=>
  assert.match(dm,/android:value="\$\{appsGamesN7AdMobAppId\}"/);
  assert.match(dm,/android:name="\.N7UmpPreviewActivity"/);
  assert.match(workflow,/N7UmpPreviewActivity\.kt/);
- assert.match(workflow,/-eq 12/);
+ assert.match(workflow,/-eq 13/);
  for(const s of [g,a,dm]){
    assert.doesNotMatch(s,/294760d25|vu3eqmvs1u5vo6wi|3903782993/);
  }
