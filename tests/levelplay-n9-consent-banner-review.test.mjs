@@ -49,7 +49,7 @@ test('N9 never treats UMP canRequestAds as opt-in or unlocks an ad request', () 
   assert.doesNotMatch(bridge, /LevelPlay\.init\(|\.loadAd\(|LevelPlayBannerAdView\(|setGDPRConsent\(|AdvertisingIdClient|Read-Host/);
   assert.match(sdk, /APPROVED_AD_REQUESTS = false/);
   assert.match(wf, /N9ConsentBannerReview\.kt/);
-  assert.match(wf, /-eq 15/);
+  assert.match(wf, /-eq 17/);
 });
 
 test('N9 contains no publisher identifiers, requests or ad network activation', () => {
