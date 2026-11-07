@@ -49,6 +49,29 @@ if (levelPlaySdkPilot && gradle.startParameter.taskNames.any {
     throw GradleException("LEVELPLAY_PRODUCTION_NO_GO: release and publish tasks forbidden for SDK pilot")
 }
 
+// N9 REVIEW ONLY: separately opted-in combined UMP + LevelPlay debug classpath.
+// Never merges with N7 consent-only or the original SDK-only draft flag.
+// It does not initialize the LevelPlay SDK, load an ad or mount a banner.
+val n9ReviewOnly = providers.gradleProperty("appsGamesN9ConsentBannerReview")
+    .orNull?.equals("true", ignoreCase = true) == true
+if (n9ReviewOnly && (n7UmpPreview || levelPlaySdkPilot)) {
+    throw GradleException("N9_SEPARATE_DEBUG_REVIEW_REQUIRED")
+}
+if (n9ReviewOnly && gradle.startParameter.taskNames.any {
+        it.contains("release", ignoreCase = true) ||
+        it.contains("publish", ignoreCase = true) ||
+        it.contains("bundle", ignoreCase = true)
+    }) {
+    throw GradleException("N9_PRODUCTION_NO_GO: review-only SDK cannot ship")
+}
+val n9AdMobAppId = if (n9ReviewOnly)
+    providers.environmentVariable("APPSGAMES_N7_ADMOB_APP_ID").orNull?.trim().orEmpty()
+    else ""
+if (n9ReviewOnly &&
+    !Regex("""ca-app-pub-\d{16}~\d{10}""").matches(n9AdMobAppId)) {
+    throw GradleException("N9_PRIVATE_ADMOB_APP_ID_REQUIRED")
+}
+
 // DATE_LOTTO_RELEASE_SIGNING
 val keystorePropertiesFile =
     rootProject.file("keystore.properties")
@@ -145,6 +168,14 @@ android {
         sourceSets.getByName("debug").manifest.srcFile("src/n7ConsentPilot/AndroidManifest.xml")
         buildTypes.getByName("debug").manifestPlaceholders["appsGamesN7AdMobAppId"] = n7AdMobAppId
     }
+    if (n9ReviewOnly) {
+        // Both sources exist ONLY in the isolated review DEBUG APK.
+        // MainActivity remains untouched, and no SDK class is instantiated.
+        sourceSets.getByName("debug").java.srcDir("src/levelplayPilot/java")
+        sourceSets.getByName("debug").java.srcDir("src/n7ConsentPilot/java")
+        sourceSets.getByName("debug").manifest.srcFile("src/n7ConsentPilot/AndroidManifest.xml")
+        buildTypes.getByName("debug").manifestPlaceholders["appsGamesN7AdMobAppId"] = n9AdMobAppId
+    }
 }
 
 kotlin {
@@ -168,6 +199,12 @@ dependencies {
     if (n7UmpPreview) {
         // Consent-only debug activity; deliberately no LevelPlay dependency.
         implementation("com.google.android.ump:user-messaging-platform:4.0.0")
+    }
+    if (n9ReviewOnly) {
+        // Linkage/consent review ONLY; never install or start without separate
+        // preflight approval (SDK/AdQuality may have startup side effects).
+        implementation("com.google.android.ump:user-messaging-platform:4.0.0")
+        implementation("com.unity3d.ads-mediation:mediation-sdk:9.5.0")
     }
     implementation("androidx.webkit:webkit:1.14.0")
     implementation("androidx.appcompat:appcompat:1.7.1")
