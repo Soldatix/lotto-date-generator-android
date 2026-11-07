@@ -70,3 +70,14 @@ Unity LevelPlay test device documentation:
 https://docs.unity.com/en-us/grow/levelplay/sdk/android/integration-testing
 
 **REAL_ADS=OFF; N7_DEFAULT=OFF; PRODUCTION_NO_GO=TRUE**.
+
+## Huawei physical runbook prepared (2026-11-07)
+
+Script: `scripts/LevelPlay-Huawei-N7-UMP-FormOnly.ps1`. It **requires a disposable SHA-pinned clone** under `%TEMP%\\DateLotto-N7-*`. Owner does not need to retest N5 layout.
+
+- Default execution: builds isolated debug APK **only**, verifies debug package, UMP present, Unity/LevelPlay absent, and does not install.
+- Optional `-InstallAndLaunch` validates exact Huawei CMR-W09 API 28, asks for typed `APPROVE N7 UMP`, and only then replaces the isolated pilot APK; production package never touched. Note: replaces the *existing isolated N5 test installation* on the Huawei device, not production.
+- AdMob Android App ID is entered locally with concealed input and placed only in process environment; no app/key IDs committed or printed. It is embedded in the disposable debug APK manifest (not a secret) as required by Google UMP.
+- First prerequisite: **publish/verify the Android AdMob app GDPR message** (not the AdSense website message) when the publisher approves its content. Otherwise UMP may legitimately report no form required.
+- A consent form may be required only for eligible users/device regions; `FORM_COMPLETED_OR_NOT_REQUIRED` does not prove a form was displayed. Device-side logs and screenshots are needed for meaningful evidence. No live ad requests are made.
+- The N7 local build is not yet demonstrated; compile-only CI passing does not prove the N7 APK build/install. Any local failure is HOLD, not permission to bypass gates.
