@@ -355,10 +355,19 @@ internal class N12LottoBannerActivity : TauriActivity(), NativeBannerAnchorListe
             }
             override fun onAdLoadFailed(error: LevelPlayAdError) {
                 banner?.pauseAutoRefresh()
-                if (ownerDebugOnly()) status("TEST banner nije učitan · nema ponavljanja")
+                // Only the numeric SDK error code is allowed into diagnostic
+                // UI/logs. Error messages can contain publisher/device IDs,
+                // bid data, network URLs or private consent details.
+                val code = error.errorCode
+                Log.w(TAG, "N12_BANNER_LOAD_FAILED_CODE=$code")
+                if (ownerDebugOnly()) status("TEST banner nije učitan · kod $code · nema ponavljanja")
             }
             override fun onAdDisplayed(adInfo: LevelPlayAdInfo) {}
-            override fun onAdDisplayFailed(adInfo: LevelPlayAdInfo, error: LevelPlayAdError) {}
+            override fun onAdDisplayFailed(adInfo: LevelPlayAdInfo, error: LevelPlayAdError) {
+                val code = error.errorCode
+                Log.w(TAG, "N12_BANNER_DISPLAY_FAILED_CODE=$code")
+                if (ownerDebugOnly()) status("TEST banner nije prikazan · kod $code")
+            }
             override fun onAdClicked(adInfo: LevelPlayAdInfo) {}
             override fun onAdExpanded(adInfo: LevelPlayAdInfo) {}
             override fun onAdCollapsed(adInfo: LevelPlayAdInfo) {}
