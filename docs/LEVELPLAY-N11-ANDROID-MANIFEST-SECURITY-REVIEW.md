@@ -114,6 +114,52 @@ reflection, or network activity. There is **no clearance to install N11**.
 - `N11_B_STATIC_PROVIDER_BYTECODE_INVENTORY=PASS`
 - `N11_B_PRECONSENT_PROVIDER_SAFETY=REQUIRES_REVIEW`
 
+## N11-C delegated startup method inventory — PASS, consent safety unproven
+
+CI source: [N11-C run 42383745226](https://github.com/Soldatix/lotto-date-generator-android/actions/runs/42383745226).
+The first N11-C attempt failed on a **javap parser** that ignored package-private
+obfuscated methods; this was fixed and the exact pinned SDK 9.5.0 audit passed.
+
+- `com.ironsource.lifecycle.b`: 26 methods and 46 direct invocations in the
+  pinned class. In particular, `a(Context)` registers Android
+  `Application.registerActivityLifecycleCallbacks`. Other methods post
+  background tasks through `IronSourceThreadManager` on lifecycle events.
+- `LevelPlayActivityLifecycleProvider.a(Application)` builds a lifecycle
+  callback listener and registers it with
+  `Application.registerActivityLifecycleCallbacks`.
+- No direct `loadAd()` invocation was observed in those reviewed paths,
+  **but this is not a proof of absence of pre-consent data collection**.
+  Delegated listeners and asynchronous jobs are not exhaustively traced.
+- `N11_C_DELEGATED_BYTECODE_REVIEW=PASS` and
+  `N11_C_PRIVACY_SAFETY=STILL_NOT_PROVEN` both apply.
+
+## N11-D CI-only provider-suppression experiment — PASS, runtime unknown
+
+CI source: [N11-D run 42383961819](https://github.com/Soldatix/lotto-date-generator-android/actions/runs/42383961819).
+A **temporary manifest overlay in the disposable CI proxy only** used
+Android's official `tools:node="remove"` mechanism to suppress exactly
+`IronsourceLifecycleProvider` and `LevelPlayActivityLifecycleProvider`
+after comparing the original merged manifest first.
+
+- The second `processDebugMainManifest` completed successfully and both
+  lifecycle providers were absent from the modified proxy merged manifest.
+- The application's original `androidx.core.content.FileProvider` and
+  N8 Google UMP diagnostic activity remained present.
+- Neither the real Android Tauri source manifest nor the user's locally
+  built N11 API-37 APK was changed. **No APK or SDK code was executed**.
+- `N11_D_PROVIDER_SUPPRESSION_PROXY=PASS`;
+  `N11_D_SDK_RUNTIME_COMPATIBILITY=UNVERIFIED`;
+  `N11_D_PRODUCTION_MANIFEST=UNCHANGED; SDK_INSTALL=HOLD`.
+- Unity's Android integration guide explicitly lists
+  `IronsourceLifecycleProvider` among integration components. Removing it
+  may impact SDK functionality. This is **not a supported runtime configuration
+  until compatibility is verified**, and must not be enabled in production
+  as a result of this CI-only experiment.
+
+Sources:
+- https://developer.android.com/build/manage-manifests
+- https://docs.unity.com/en-us/grow/levelplay/sdk/android/sdk-integration
+
 ## Mandatory unresolved gates before an SDK-enabled Huawei APK
 
 1. Review LevelPlay 9.5.0 + AdQuality auto-initialization timing and the lifecycle providers against the requirement to refresh UMP before advertising-related data processing. Consider privacy architecture alternatives; do not assume that only `LevelPlay.init()` starts SDK behavior.
