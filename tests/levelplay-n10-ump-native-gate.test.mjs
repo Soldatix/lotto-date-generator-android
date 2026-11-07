@@ -58,7 +58,7 @@ test('N10 refusal, withdrawal, race, pause and native placement cannot start ads
   assert.match(native, /N3_SDK_PLACEMENT_HANDOFF_APPROVED = false/);
   assert.match(wf, /N10FailClosedSession\.kt/);
   assert.match(wf, /N10UmpNativeCoordinator\.kt/);
-  assert.match(wf, /-eq 15/);
+  assert.match(wf, /-eq 17/);
   assert.match(unit, /delayedCallbacksCannotResurrectConsentAfterWithdrawal/);
   assert.match(unit, /rejectionAfterPrivacyFormAlwaysRevokesN5Candidate/);
 });
