@@ -79,20 +79,39 @@ internal class N12LottoBannerActivity : TauriActivity(), NativeBannerAnchorListe
     private lateinit var privacyButton: Button
     private lateinit var stateLabel: TextView
     private var testControls: LinearLayout? = null
+    private var testControlsRoot: FrameLayout? = null
 
     /**
-     * Tauri attaches its WebView asynchronously after Activity.onCreate().
-     * The early-added N12 control panel can end up BEHIND the WebView.
-     * Restore its Z-order only in the isolated pilot, never move/resize
-     * Tauri-owned views or modify the native N5 banner anchor.
+     * Keep N12 controls in Window DecorView, a sibling of the Android content
+     * frame. Tauri may asynchronously REPLACE the content-frame children,
+     * which removes an early-added panel; bringToFront() cannot fix a view
+     * whose parent is no longer the frame. Debug overlay never touches the
+     * N5 native banner positioning root or any production Activity.
      */
     private fun keepDebugControlsVisible() {
-        val root = nativeRoot ?: return
+        val root = testControlsRoot ?: return
         val panel = testControls ?: return
-        if (!ownerDebugOnly() || panel.parent !== root) return
-        if (root.childCount > 0 && root.getChildAt(root.childCount - 1) !== panel) {
+        if (!ownerDebugOnly()) return
+        if (panel.parent !== root) {
+            (panel.parent as? android.view.ViewGroup)?.removeView(panel)
+            val density = resources.displayMetrics.density
+            fun dp(n: Int): Int = (n * density + .5f).toInt()
+            root.addView(
+                panel,
+                FrameLayout.LayoutParams(
+                    dp(190), FrameLayout.LayoutParams.WRAP_CONTENT,
+                    Gravity.TOP or Gravity.END
+                ).apply {
+                    topMargin = dp(120)
+                    rightMargin = dp(8)
+                }
+            )
+            Log.i(TAG, "N12_TEST_CONTROLS_DECOR_REATTACHED")
+        }
+        if (root.getChildAt(root.childCount - 1) !== panel) {
             panel.bringToFront()
         }
+        panel.visibility = View.VISIBLE
     }
 
 
@@ -132,7 +151,14 @@ internal class N12LottoBannerActivity : TauriActivity(), NativeBannerAnchorListe
     }
 
     private fun installSmallDebugControls() {
-        val root = nativeRoot ?: return
+        // An Activity content FrameLayout can be emptied by Tauri later.
+        // The decor root is outside that replaceable content subtree.
+        val root = window.decorView as? FrameLayout
+        if (root == null) {
+            Log.w(TAG, "N12_TEST_CONTROLS_DECOR_UNAVAILABLE")
+            return
+        }
+        testControlsRoot = root
         val density = resources.displayMetrics.density
         fun dp(n: Int): Int = (n * density + .5f).toInt()
         val controls = LinearLayout(this).apply {
@@ -162,6 +188,7 @@ internal class N12LottoBannerActivity : TauriActivity(), NativeBannerAnchorListe
         controls.addView(privacyButton)
         controls.addView(testButton)
         testControls = controls
+        controls.importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_YES
         root.addView(
             controls,
             FrameLayout.LayoutParams(
@@ -178,6 +205,7 @@ internal class N12LottoBannerActivity : TauriActivity(), NativeBannerAnchorListe
         root.post { keepDebugControlsVisible() }
         root.postDelayed({ keepDebugControlsVisible() }, 1000L)
         root.postDelayed({ keepDebugControlsVisible() }, 3000L)
+        Log.i(TAG, "N12_TEST_CONTROLS_ADDED_TO_DECOR")
     }
 
     /**
@@ -425,6 +453,8 @@ internal class N12LottoBannerActivity : TauriActivity(), NativeBannerAnchorListe
     }
     override fun onDestroy() {
         finalized = true
+        (testControls?.parent as? android.view.ViewGroup)?.removeView(testControls)
+        testControlsRoot = null
         testControls = null
         disableAndDestroyBanner()
         probe?.detach()
