@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Debug-only overlay. Never changes the release app name. -->
+    <string name="app_name">Date Lotto - LP TEST</string>
+    <string name="main_activity_title">Date Lotto - LP TEST</string>
+</resources>

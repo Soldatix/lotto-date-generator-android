@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Merged into explicitly opted-in DEBUG N7 APK only. -->
+    <application>
+        <meta-data android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="${appsGamesN7AdMobAppId}" />
+        <activity android:name=".N7UmpPreviewActivity"
+            android:exported="true"
+            android:label="Date Lotto UMP Debug - NO ADS" />
+        <!-- N8 is only present in explicit UMP-only debug build. -->
+        <activity android:name=".N8UmpPrivacyOptionsActivity"
+            android:exported="true"
+            android:label="Date Lotto Privacy Test - NO ADS" />
+    </application>
+</manifest>
