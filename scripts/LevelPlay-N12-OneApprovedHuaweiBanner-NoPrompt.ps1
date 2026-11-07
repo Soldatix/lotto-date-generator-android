@@ -218,9 +218,11 @@ $adb = Join-Path $sdk 'platform-tools\adb.exe'
 if (-not (Test-Path -LiteralPath $adb -PathType Leaf)) {
     throw 'N12_ADB_MISSING'
 }
-$devices = @(NativeChecked $adb @('devices') -split "`r?`n" |
-    Where-Object { $_ -match '^\S+\s+device\s*
- })
+$deviceOutput = NativeChecked $adb @('devices')
+$devices = @(
+    ($deviceOutput -split '\r?\n') |
+        Where-Object { $_ -match '^\S+\s+device\s*$' }
+)
 $huawei = @()
 foreach ($line in $devices) {
     $serial = ($line -split '\s+')[0]
