@@ -85,6 +85,24 @@ jobs:
             throw 'N8_POWERSHELL_SYNTAX_FAILED'
           }
           Write-Host 'N8_POWERSHELL_SYNTAX=PASS'
+      - name: Parse N11 combined SDK build-only PowerShell (NEVER execute)
+        shell: pwsh
+        run: |
+          $path = 'scripts/LevelPlay-N11-CombinedSDK-DebugBuild-NoInstall.ps1'
+          $tokens = $null
+          $parseErrors = $null
+          [void][System.Management.Automation.Language.Parser]::ParseFile(
+            (Resolve-Path -LiteralPath $path).Path,
+            [ref]$tokens,
+            [ref]$parseErrors
+          )
+          if ($parseErrors.Count -gt 0) {
+            foreach ($issue in $parseErrors) {
+              Write-Host ("Line " + $issue.Extent.StartLineNumber + ": " + $issue.Message)
+            }
+            throw 'N11_POWERSHELL_SYNTAX_FAILED'
+          }
+          Write-Host 'N11_POWERSHELL_SYNTAX=PASS'
       - name: Install locked dependencies
         run: npm ci
       - name: Production build (also creates PWA service worker)
