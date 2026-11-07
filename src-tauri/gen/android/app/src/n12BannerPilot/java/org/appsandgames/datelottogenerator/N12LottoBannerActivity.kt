@@ -78,6 +78,23 @@ internal class N12LottoBannerActivity : TauriActivity(), NativeBannerAnchorListe
     private lateinit var testButton: Button
     private lateinit var privacyButton: Button
     private lateinit var stateLabel: TextView
+    private var testControls: LinearLayout? = null
+
+    /**
+     * Tauri attaches its WebView asynchronously after Activity.onCreate().
+     * The early-added N12 control panel can end up BEHIND the WebView.
+     * Restore its Z-order only in the isolated pilot, never move/resize
+     * Tauri-owned views or modify the native N5 banner anchor.
+     */
+    private fun keepDebugControlsVisible() {
+        val root = nativeRoot ?: return
+        val panel = testControls ?: return
+        if (!ownerDebugOnly() || panel.parent !== root) return
+        if (root.childCount > 0 && root.getChildAt(root.childCount - 1) !== panel) {
+            panel.bringToFront()
+        }
+    }
+
 
     private val ump by lazy { UserMessagingPlatform.getConsentInformation(this) }
 
@@ -144,16 +161,23 @@ internal class N12LottoBannerActivity : TauriActivity(), NativeBannerAnchorListe
         controls.addView(stateLabel)
         controls.addView(privacyButton)
         controls.addView(testButton)
+        testControls = controls
         root.addView(
             controls,
             FrameLayout.LayoutParams(
                 dp(190), FrameLayout.LayoutParams.WRAP_CONTENT,
                 Gravity.TOP or Gravity.END
             ).apply {
-                topMargin = dp(28)
+                // Below the Tauri header/settings buttons; debug UI ONLY.
+                topMargin = dp(120)
                 rightMargin = dp(8)
             }
         )
+        // Tauri's WebView is asynchronous; one immediate reorder is not enough.
+        // No timers, SDK calls, or ad requests: just Android UI Z-order.
+        root.post { keepDebugControlsVisible() }
+        root.postDelayed({ keepDebugControlsVisible() }, 1000L)
+        root.postDelayed({ keepDebugControlsVisible() }, 3000L)
     }
 
     /**
@@ -351,6 +375,7 @@ internal class N12LottoBannerActivity : TauriActivity(), NativeBannerAnchorListe
 
     override fun onAnchorVisible(bounds: NativeBannerAnchorBounds) {
         if (!ownerDebugOnly()) return
+        keepDebugControlsVisible()
         val root = nativeRoot ?: return
         val candidate = N4BannerSizeFitPolicy.fit(
             bounds, 320, 50, resources.displayMetrics.density,
@@ -365,6 +390,7 @@ internal class N12LottoBannerActivity : TauriActivity(), NativeBannerAnchorListe
         }
     }
     override fun onAnchorHidden() {
+        keepDebugControlsVisible()
         slot = null
         banner?.pauseAutoRefresh()
         banner?.visibility = View.GONE
@@ -387,6 +413,7 @@ internal class N12LottoBannerActivity : TauriActivity(), NativeBannerAnchorListe
     override fun onResume() {
         super.onResume()
         probe?.resume()
+        nativeRoot?.post { keepDebugControlsVisible() }
         if (!finalized && consentRefreshed && !hasExplicitFullTcfOptIn()) {
             disableAndDestroyBanner()
         }
@@ -398,6 +425,7 @@ internal class N12LottoBannerActivity : TauriActivity(), NativeBannerAnchorListe
     }
     override fun onDestroy() {
         finalized = true
+        testControls = null
         disableAndDestroyBanner()
         probe?.detach()
         probe = null
