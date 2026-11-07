@@ -90,6 +90,30 @@ Unity's GDPR compliance documentation explicitly instructs publishers
 not to initialize LevelPlay before obtaining legally required consent:
 https://docs.unity.com/grow/levelplay/platform/legal-resources/ironsource-gdpr-compliance
 
+## N11-B observed provider `onCreate()` bytecode
+
+The GitHub CI audit `42383106002` found both classes in the **exact**
+`mediation-sdk-9.5.0.aar` artifact and ran `javap -c` without executing the SDK.
+
+- `com.ironsource.lifecycle.IronsourceLifecycleProvider.onCreate()`
+  makes three direct calls, including the internal
+  `com.ironsource.lifecycle.b.d()`, `ContentProvider.getContext()`,
+  and `com.ironsource.lifecycle.b.a(Context)`. The internal `b` code
+  **must be inspected next**; this report does not know what it does.
+- `com.ironsource.lifecycle.LevelPlayActivityLifecycleProvider.onCreate()`
+  calls `ContentProvider.getContext()`, an `IronLog.verbose(...)`
+  logger, and an internal `a(Application)` method; this delegated method
+  **must be inspected next**.
+
+Bytecode inventory **PASS** merely confirms these calls exist. A provider
+executes on Android process startup **before our UMP Activity**; a static
+direct-call list cannot rule out indirect analytics, identity collection,
+reflection, or network activity. There is **no clearance to install N11**.
+
+- CI: https://github.com/Soldatix/lotto-date-generator-android/actions/runs/42383106002
+- `N11_B_STATIC_PROVIDER_BYTECODE_INVENTORY=PASS`
+- `N11_B_PRECONSENT_PROVIDER_SAFETY=REQUIRES_REVIEW`
+
 ## Mandatory unresolved gates before an SDK-enabled Huawei APK
 
 1. Review LevelPlay 9.5.0 + AdQuality auto-initialization timing and the lifecycle providers against the requirement to refresh UMP before advertising-related data processing. Consider privacy architecture alternatives; do not assume that only `LevelPlay.init()` starts SDK behavior.
