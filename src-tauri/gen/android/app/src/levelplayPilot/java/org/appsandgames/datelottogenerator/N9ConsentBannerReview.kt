@@ -102,6 +102,12 @@ internal object N9ConsentBannerReview {
         rootWidthPx: Int,
         rootHeightPx: Int
     ): N9ReviewResult {
+        // Refusal or withdrawal immediately discards any previously eligible
+        // geometry; an ad must never remain visible on revoked permission.
+        if (evidence.choice == N9UserChoice.REJECTED ||
+            evidence.choice == N9UserChoice.WITHDRAWN) {
+            return afterRefusalOrWithdrawal()
+        }
         val placement = examineN5Slot(anchor, density, rootWidthPx, rootHeightPx)
         val readyForFurtherReview =
             placement != null &&
