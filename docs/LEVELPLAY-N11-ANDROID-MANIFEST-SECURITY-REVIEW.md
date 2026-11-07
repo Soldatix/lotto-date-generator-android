@@ -52,6 +52,44 @@ New providers are **not exported**, but their names suggest possible process-sta
 
 **Cleartext:** debug variant reports `usesCleartextTraffic=true` because this Tauri debug configuration already uses that value. Real release uses its separate `usesCleartextTraffic=false` setting. No release manifest was changed by N11.
 
+## Owner's local N11 Windows API-37 evidence (build-only)
+
+On 2026-11-07, the owner ran the pinned **no-install** N11 build script
+against Android SDK API 37 in a disposable Windows clone. Observed output:
+
+- `N11_COMBINED_APK_COMPILED=PASS`
+- `N11_REAL_API37_DEBUG_MANIFEST=PRELIMINARY_COMPONENT_CHECK_PASS`
+- `N11_UMP_PRESENT=TRUE; LEVELPLAY_SDK_PRESENT=TRUE; N10_GUARDS_PRESENT=TRUE`
+- APK SHA256: `5604A20FAB70BA8E084FF0EA04442959C2B820EB73EDAFD6B4C728CCDF5206CC`
+- `NO_ADB=TRUE; NO_INSTALL=TRUE; NO_LAUNCH=TRUE`
+- `SDK_STARTUP_PRIVACY_REVIEW=PENDING; REAL_ADS=OFF; PRODUCTION_NO_GO=TRUE`
+
+These results verify build completion and preliminary merged-manifest components.
+They do **not** mean the provider startup code or consent timing is approved.
+The actual APK is local only and was not installed/uploaded.
+
+## N11-B static LevelPlay provider bytecode review
+
+The additional `inspect_lifecycle_providers.py` audit runs **offline inside
+GitHub CI**, reading the pinned, already-resolved AAR classfiles and using
+`javap` to enumerate only direct `onCreate()` method references of
+`IronsourceLifecycleProvider` and `LevelPlayActivityLifecycleProvider`.
+It executes no SDK bytecode, processes no real publisher/device IDs, and
+does not build, install or launch a test APK. The report is an **inventory**:
+a direct method-call listing cannot prove the absence of data collection
+in code called indirectly or through reflection. Any follow-up evidence
+must explicitly maintain the **SDK-install HOLD** until privacy semantics
+have been reviewed.
+
+Android's official ContentProvider documentation confirms that registered
+providers are constructed and initialized during application startup, which
+may precede an Activity-level Google UMP form:
+https://developer.android.com/reference/android/content/ContentProvider
+
+Unity's GDPR compliance documentation explicitly instructs publishers
+not to initialize LevelPlay before obtaining legally required consent:
+https://docs.unity.com/grow/levelplay/platform/legal-resources/ironsource-gdpr-compliance
+
 ## Mandatory unresolved gates before an SDK-enabled Huawei APK
 
 1. Review LevelPlay 9.5.0 + AdQuality auto-initialization timing and the lifecycle providers against the requirement to refresh UMP before advertising-related data processing. Consider privacy architecture alternatives; do not assume that only `LevelPlay.init()` starts SDK behavior.
