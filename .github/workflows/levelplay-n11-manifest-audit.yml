@@ -1,0 +1,189 @@
+name: N11 LevelPlay merged Android manifest audit (NO APK)
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - .github/workflows/levelplay-n11-manifest-audit.yml
+      - ci/android-levelplay-manifest-audit/**
+      - src-tauri/gen/android/app/src/main/AndroidManifest.xml
+      - src-tauri/gen/android/app/src/n7ConsentPilot/AndroidManifest.xml
+      - src-tauri/gen/android/app/build.gradle.kts
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  n11-merged-manifest-diff:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout pilot PR
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Verify fail-closed Android pilot sources and compile tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F 'N9_PRODUCTION_NO_GO' src-tauri/gen/android/app/build.gradle.kts
+          grep -F 'N7_UMP_ONLY' src-tauri/gen/android/app/build.gradle.kts
+          grep -F 'APPROVED_AD_REQUESTS = false'             src-tauri/gen/android/app/src/levelplayPilot/java/org/appsandgames/datelottogenerator/LevelPlaySdkBannerDraft.kt
+          grep -F 'N10_TEST_AD_REQUESTS_APPROVED = false'             src-tauri/gen/android/app/src/levelplayPilot/java/org/appsandgames/datelottogenerator/N10FailClosedSession.kt
+          ! grep -Eq '294760d25|vu3eqmvs1u5vo6wi'             ci/android-levelplay-manifest-audit/build.gradle.kts
+          echo 'N11_SOURCE_NO_REQUEST_GATES=PASS'
+
+      - name: Prepare Android SDK 36 (proxy target only)
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install             "platforms;android-36" "build-tools;36.0.0"
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
+
+      - name: Copy actual Tauri app manifests into disposable proxy
+        shell: bash
+        run: |
+          set -euo pipefail
+          audit='ci/android-levelplay-manifest-audit'
+          mkdir -p "$audit/src/main" "$audit/src/debug"
+          cp src-tauri/gen/android/app/src/main/AndroidManifest.xml             "$audit/src/main/AndroidManifest.xml"
+          cp src-tauri/gen/android/app/src/n7ConsentPilot/AndroidManifest.xml             "$audit/src/debug/AndroidManifest.xml"
+          ! find "$audit" -name '*.apk' -o -name '*.aab' | grep -q .
+          echo 'N11_REAL_TAURI_SOURCE_MANIFESTS_COPIED=PASS'
+
+      - name: Merge UMP-only debug manifest without any APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          wrapper='src-tauri/gen/android/gradle/wrapper/gradle-wrapper.properties'
+          echo 'networkTimeout=120000' >> "$wrapper"
+          bash src-tauri/gen/android/gradlew             -p ci/android-levelplay-manifest-audit             --no-daemon --console=plain --rerun-tasks             -Pn11WithLevelPlay=false processDebugMainManifest
+          python3 - <<'PY'
+          from pathlib import Path
+          root=Path('ci/android-levelplay-manifest-audit/build/intermediates')
+          candidates=sorted(
+              p for p in root.rglob('AndroidManifest.xml')
+              if 'merged_manifest' in str(p)
+          )
+          if not candidates:
+              raise SystemExit('N11_NO_MERGED_BASELINE_MANIFEST')
+          data=candidates[-1].read_bytes()
+          if b'N7UmpPreviewActivity' not in data:
+              raise SystemExit('N11_MERGED_BASELINE_MISSING_N7')
+          Path('/tmp/n11-ump-only-merged.xml').write_bytes(data)
+          print('N11_UMP_ONLY_MANIFEST_MERGED=PASS')
+          PY
+
+      - name: Merge Google UMP plus LevelPlay 9.5.0 debug manifest without APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash src-tauri/gen/android/gradlew             -p ci/android-levelplay-manifest-audit             --no-daemon --console=plain --rerun-tasks             -Pn11WithLevelPlay=true processDebugMainManifest
+          python3 - <<'PY'
+          from pathlib import Path
+          root=Path('ci/android-levelplay-manifest-audit/build/intermediates')
+          candidates=sorted(
+              p for p in root.rglob('AndroidManifest.xml')
+              if 'merged_manifest' in str(p)
+          )
+          if not candidates:
+              raise SystemExit('N11_NO_MERGED_SDK_MANIFEST')
+          data=candidates[-1].read_bytes()
+          if b'N7UmpPreviewActivity' not in data:
+              raise SystemExit('N11_MERGED_SDK_MISSING_N7')
+          Path('/tmp/n11-sdk-merged.xml').write_bytes(data)
+          print('N11_SDK_PLUS_UMP_MANIFEST_MERGED=PASS')
+          PY
+
+      - name: Inspect resolved LevelPlay lifecycle provider bytecode (no SDK execution)
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 ci/android-levelplay-manifest-audit/inspect_lifecycle_providers.py
+          echo 'N11_B_PROVIDER_METHODS_STATIC_ONLY=TRUE'
+
+      - name: N11-C inspect obfuscated lifecycle delegate method calls (NO SDK execution)
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 ci/android-levelplay-manifest-audit/inspect_delegated_provider_calls.py
+          echo 'N11_C_STATIC_ONLY=TRUE; SDK_INSTALL=HOLD'
+
+      - name: N11-D simulate debug-only provider suppression in CI sandbox
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+
+          path=Path('ci/android-levelplay-manifest-audit/src/debug/AndroidManifest.xml')
+          android='http://schemas.android.com/apk/res/android'
+          tools='http://schemas.android.com/tools'
+          ET.register_namespace('android',android)
+          ET.register_namespace('tools',tools)
+          doc=ET.parse(path)
+          root=doc.getroot()
+          app=root.find('application')
+          if app is None:
+              raise SystemExit('N11_D_DEBUG_OVERLAY_APP_MISSING')
+          targets=[
+              'com.ironsource.lifecycle.IronsourceLifecycleProvider',
+              'com.ironsource.lifecycle.LevelPlayActivityLifecycleProvider',
+          ]
+          for target in targets:
+              ET.SubElement(app, 'provider', {
+                  '{'+android+'}name':target,
+                  '{'+tools+'}node':'remove',
+              })
+          doc.write(path,encoding='utf-8',xml_declaration=True)
+          print('N11_D_CI_DEBUG_OVERLAY_ONLY=PASS')
+          PY
+          bash src-tauri/gen/android/gradlew             -p ci/android-levelplay-manifest-audit             --no-daemon --console=plain --rerun-tasks             -Pn11WithLevelPlay=true processDebugMainManifest
+          python3 - <<'PY'
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+          root=Path('ci/android-levelplay-manifest-audit/build/intermediates')
+          paths=sorted(p for p in root.rglob('AndroidManifest.xml')
+                       if 'merged_manifest' in str(p))
+          if not paths:
+              raise SystemExit('N11_D_MERGED_MANIFEST_MISSING')
+          app=ET.parse(paths[-1]).getroot().find('application')
+          if app is None:
+              raise SystemExit('N11_D_MERGED_APP_MISSING')
+          android='{http://schemas.android.com/apk/res/android}name'
+          names={el.get(android,'') for el in app.findall('provider')}
+          targets={
+              'com.ironsource.lifecycle.IronsourceLifecycleProvider',
+              'com.ironsource.lifecycle.LevelPlayActivityLifecycleProvider',
+          }
+          if not targets.isdisjoint(names):
+              raise SystemExit('N11_D_PROVIDER_REMOVAL_FAILED')
+          if 'androidx.core.content.FileProvider' not in names:
+              raise SystemExit('N11_D_PRODUCTION_FILEPROVIDER_LOST')
+          activities={el.get(android,'') for el in app.findall('activity')}
+          if not any('N8UmpPrivacyOptionsActivity' in x for x in activities):
+              raise SystemExit('N11_D_UMP_TEST_ACTIVITY_LOST')
+          print('N11_D_PROVIDER_SUPPRESSION_PROXY=PASS')
+          print('N11_D_SDK_RUNTIME_COMPATIBILITY=UNVERIFIED')
+          print('N11_D_PRODUCTION_MANIFEST=UNCHANGED; SDK_INSTALL=HOLD')
+          PY
+
+      - name: Diff permissions, AdQuality components and exported surfaces
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 ci/android-levelplay-manifest-audit/review_merged_manifests.py             /tmp/n11-ump-only-merged.xml /tmp/n11-sdk-merged.xml
+          # No APKs, no normal or debug app installation, no publisher secrets.
+          if find ci/android-levelplay-manifest-audit -type f             \( -name '*.apk' -o -name '*.aab' \) | grep -q .; then
+            echo 'N11_UNEXPECTED_DISTRIBUTION_ARTIFACT' >&2
+            exit 1
+          fi
+          echo 'N11_APK_AAB=NONE; AD_REQUESTS=NONE; PRODUCTION_NO_GO=TRUE'

@@ -79,3 +79,95 @@ html[data-theme="dark"] .settings-delete{color:#ff8da0}
 .settings-local{font-size:.78rem;color:var(--muted)}
 .settings-close{background:linear-gradient(135deg,var(--blue),var(--purple2));color:white}
 @media(max-width:480px){.settings-modal{max-height:94vh}.settings-body{padding:16px 13px}.settings-box{padding:14px}.settings-actions{flex-direction:column}.settings-actions .btn{width:100%}.settings-head,.settings-foot{padding:13px}}
+
+/* Unity LevelPlay pilot: Android Tauri preview ONLY. No ad SDK or tracking. */
+.levelplay-pilot[hidden] { display: none !important; }
+.levelplay-pilot {
+  max-width: 100%;
+  text-align: center;
+  margin: 16px auto;
+  padding: 15px 0;
+  border-block: 1px solid var(--line);
+  color: var(--text);
+}
+.levelplay-pilot-heading { font-size: 1rem; margin: 0 0 8px; }
+.levelplay-pilot-detail { margin: 0 auto 10px; max-width: 66ch; color: var(--muted); font-size: .82rem; line-height: 1.5; }
+.levelplay-pilot-status { margin: 10px auto; font-size: .8rem; color: var(--muted); }
+.levelplay-pilot-label { text-transform: uppercase; letter-spacing: .08em; font-size: .65rem; color: var(--muted); margin: 10px 0 4px; }
+.levelplay-pilot-placeholder {
+  width: min(320px, 100%); min-height: 50px;
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto; padding: 6px;
+  border: 1px dashed var(--blue); border-radius: 9px;
+  background: var(--input); font-size: .72rem; color: var(--muted);
+}
+.levelplay-pilot-actions { display:flex; flex-wrap:wrap; justify-content:center; gap:9px; margin:12px 0 0; }
+.levelplay-pilot-button {
+  min-height: 44px; max-width: 100%; padding: 8px 14px;
+  background: var(--panel); color: var(--text);
+  border: 1px solid var(--line); border-radius: 10px; font: inherit;
+  cursor: pointer;
+}
+.levelplay-pilot-button:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+@media (max-width: 359px) { .levelplay-pilot-button { width: 100%; } }
+
+
+/* Debug-only Android tablet visual reservation inside the result panel.
+   Hidden until an authorized isolated native debug Intent explicitly reveals it.
+   This is NOT a native ad view. It never overlaps results or history. */
+.native-tablet-banner-probe[hidden] { display: none !important; }
+.native-tablet-banner-probe {
+  flex: 0 0 50px;
+  align-self: center;
+  width: min(320px, 100%);
+  height: 50px;
+  margin: auto auto 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  border-radius: 9px;
+  border: 1px dashed #3f8bf7;
+  background: linear-gradient(90deg, #143b7d, #2865b0);
+  color: #ffffff;
+  text-align: center;
+  font-size: .72rem;
+  font-weight: 800;
+  letter-spacing: .02em;
+  overflow: hidden;
+}
+
+
+/* V8.1 debug tablet mock: landscape often has less vertical viewport space.
+   Keep the 320x50 placeholder inside the right result card in normal flow,
+   but do not push it under the taller left card. Portrait remains unchanged. */
+@media (orientation: landscape) and (min-width: 851px) {
+  .resultBox.tablet-preview-active #resultArea.empty {
+    margin: clamp(20px, 7vh, 58px) auto 18px;
+  }
+  .resultBox.tablet-preview-active .native-tablet-banner-probe {
+    margin: 14px auto 0;
+  }
+}
+
+/* V8.2 responsive Android tablet *debug preview only*. In-panel normal flow:
+   never attach a banner over system navigation or cover lotto results.
+   These selectors apply only after the isolated debug/native ADB guard sets
+   tablet-preview-active. Kotlin inserts equivalent runtime styles because
+   WebView may have stale prebundled CSS; that injection is also debug-gated. */
+@media (orientation: landscape) {
+  .resultBox.tablet-preview-active #resultArea.empty {
+    margin: clamp(12px, 2.5vh, 24px) auto clamp(8px, 2vh, 18px) !important;
+  }
+  .resultBox.tablet-preview-active .native-tablet-banner-probe {
+    margin: clamp(8px, 1.5vh, 16px) auto 0 !important;
+  }
+}
+@media (orientation: portrait) {
+  .resultBox.tablet-preview-active #resultArea.empty {
+    margin: auto !important;
+  }
+  .resultBox.tablet-preview-active .native-tablet-banner-probe {
+    margin: auto auto 0 !important;
+  }
+}

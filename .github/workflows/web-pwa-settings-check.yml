@@ -11,6 +11,7 @@ on:
       - index.html
       - src/**
       - tests/**
+      - scripts/**
       - ci/**
       - package*.json
       - vite.config.mjs
@@ -30,6 +31,114 @@ jobs:
         with:
           node-version: '22'
           cache: npm
+      - name: Parse N2 script with PowerShell parser (no device, no execution)
+        shell: pwsh
+        run: |
+          $path = 'scripts/LevelPlay-Huawei-NativeAnchor-N2-StateMatrix.ps1'
+          $tokens = $null
+          $parseErrors = $null
+          [void][System.Management.Automation.Language.Parser]::ParseFile(
+            (Resolve-Path -LiteralPath $path).Path,
+            [ref]$tokens,
+            [ref]$parseErrors
+          )
+          if ($parseErrors.Count -gt 0) {
+            foreach ($issue in $parseErrors) {
+              Write-Host ("Line " + $issue.Extent.StartLineNumber + ": " + $issue.Message)
+            }
+            throw 'N2_POWERSHELL_SYNTAX_FAILED'
+          }
+          Write-Host 'N2_POWERSHELL_SYNTAX=PASS'
+      - name: Parse N7 Huawei consent-only PowerShell script (no execution)
+        shell: pwsh
+        run: |
+          $path = 'scripts/LevelPlay-Huawei-N7-UMP-FormOnly.ps1'
+          $tokens = $null
+          $parseErrors = $null
+          [void][System.Management.Automation.Language.Parser]::ParseFile(
+            (Resolve-Path -LiteralPath $path).Path,
+            [ref]$tokens,
+            [ref]$parseErrors
+          )
+          if ($parseErrors.Count -gt 0) {
+            foreach ($issue in $parseErrors) {
+              Write-Host ("Line " + $issue.Extent.StartLineNumber + ": " + $issue.Message)
+            }
+            throw 'N7_POWERSHELL_SYNTAX_FAILED'
+          }
+          Write-Host 'N7_POWERSHELL_SYNTAX=PASS'
+      - name: Parse N8 no-prompt Huawei UMP privacy runner (never execute)
+        shell: pwsh
+        run: |
+          $path = 'scripts/LevelPlay-Huawei-N8-PrivacyOptions-NoPrompt.ps1'
+          $tokens = $null
+          $parseErrors = $null
+          [void][System.Management.Automation.Language.Parser]::ParseFile(
+            (Resolve-Path -LiteralPath $path).Path,
+            [ref]$tokens,
+            [ref]$parseErrors
+          )
+          if ($parseErrors.Count -gt 0) {
+            foreach ($issue in $parseErrors) {
+              Write-Host ("Line " + $issue.Extent.StartLineNumber + ": " + $issue.Message)
+            }
+            throw 'N8_POWERSHELL_SYNTAX_FAILED'
+          }
+          Write-Host 'N8_POWERSHELL_SYNTAX=PASS'
+      - name: Parse N11 combined SDK build-only PowerShell (NEVER execute)
+        shell: pwsh
+        run: |
+          $path = 'scripts/LevelPlay-N11-CombinedSDK-DebugBuild-NoInstall.ps1'
+          $tokens = $null
+          $parseErrors = $null
+          [void][System.Management.Automation.Language.Parser]::ParseFile(
+            (Resolve-Path -LiteralPath $path).Path,
+            [ref]$tokens,
+            [ref]$parseErrors
+          )
+          if ($parseErrors.Count -gt 0) {
+            foreach ($issue in $parseErrors) {
+              Write-Host ("Line " + $issue.Extent.StartLineNumber + ": " + $issue.Message)
+            }
+            throw 'N11_POWERSHELL_SYNTAX_FAILED'
+          }
+          Write-Host 'N11_POWERSHELL_SYNTAX=PASS'
+      - name: Parse N12 one-shot banner APK build-only runner (never execute)
+        shell: pwsh
+        run: |
+          $path = 'scripts/LevelPlay-N12-BannerBuildOnly-NoPrompt.ps1'
+          $tokens = $null
+          $parseErrors = $null
+          [void][System.Management.Automation.Language.Parser]::ParseFile(
+            (Resolve-Path -LiteralPath $path).Path,
+            [ref]$tokens,
+            [ref]$parseErrors
+          )
+          if ($parseErrors.Count -gt 0) {
+            foreach ($issue in $parseErrors) {
+              Write-Host ("Line " + $issue.Extent.StartLineNumber + ": " + $issue.Message)
+            }
+            throw 'N12_POWERSHELL_SYNTAX_FAILED'
+          }
+          Write-Host 'N12_POWERSHELL_SYNTAX=PASS'
+      - name: Parse N12 one-approved Huawei test runner (never execute)
+        shell: pwsh
+        run: |
+          $path = 'scripts/LevelPlay-N12-OneApprovedHuaweiBanner-NoPrompt.ps1'
+          $tokens = $null
+          $parseErrors = $null
+          [void][System.Management.Automation.Language.Parser]::ParseFile(
+            (Resolve-Path -LiteralPath $path).Path,
+            [ref]$tokens,
+            [ref]$parseErrors
+          )
+          if ($parseErrors.Count -gt 0) {
+            foreach ($issue in $parseErrors) {
+              Write-Host ("Line " + $issue.Extent.StartLineNumber + ": " + $issue.Message)
+            }
+            throw 'N12_HUAWEI_ONE_TEST_POWERSHELL_SYNTAX_FAILED'
+          }
+          Write-Host 'N12_HUAWEI_ONE_TEST_POWERSHELL_SYNTAX=PASS'
       - name: Install locked dependencies
         run: npm ci
       - name: Production build (also creates PWA service worker)
@@ -38,7 +147,7 @@ jobs:
         run: npm test
       - name: Install isolated Chromium test dependencies
         run: |
-          npm install --no-save --package-lock=false playwright
+          npm install --no-save --package-lock=false playwright@1.64.1
           npx playwright install --with-deps chromium
       - name: Browser and offline PWA smoke tests
         run: |
@@ -49,3 +158,4 @@ jobs:
           done
           curl --fail http://127.0.0.1:4173/ > /dev/null
           node ci/web-pwa-settings-smoke.mjs
+          node ci/levelplay-pilot-smoke.mjs

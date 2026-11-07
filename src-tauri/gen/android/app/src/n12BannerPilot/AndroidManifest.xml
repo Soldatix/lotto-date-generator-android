@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- N12: isolated debug-only Tauri Android screen, never ordinary/release build. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+    <application>
+        <meta-data android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="${appsGamesN12AdMobAppId}" />
+
+        <activity android:name=".N12LottoBannerActivity"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode"
+            android:label="Date Lotto · Test Banner" />
+
+        <!-- N12 test-only. Disable the SDK's before-CMP startup providers.
+             Without this the providers register lifecycle listeners before
+             the N12 Activity has refreshed Google UMP. Compatibility needs
+             physical test after explicit owner authorization. -->
+        <provider android:name="com.ironsource.lifecycle.IronsourceLifecycleProvider"
+            tools:node="remove" />
+        <provider android:name="com.ironsource.lifecycle.LevelPlayActivityLifecycleProvider"
+            tools:node="remove" />
+    </application>
+</manifest>
