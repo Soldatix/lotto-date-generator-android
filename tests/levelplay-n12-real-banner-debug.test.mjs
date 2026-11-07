@@ -117,6 +117,9 @@ test('N12 authorized runner cannot install on OPPO or touch production app',()=>
 test('N12 consent/test controls stay in front of late-creating Tauri WebView',()=>{
   for (const marker of [
     'private var testControls: LinearLayout? = null',
+    'private var testControlsRoot: FrameLayout? = null',
+    'val root = window.decorView as? FrameLayout',
+    'N12_TEST_CONTROLS_ADDED_TO_DECOR',
     'private fun keepDebugControlsVisible()',
     'panel.bringToFront()',
     'root.postDelayed({ keepDebugControlsVisible() }, 1000L)',
@@ -126,4 +129,8 @@ test('N12 consent/test controls stay in front of late-creating Tauri WebView',()
   ]) assert.ok(activity.includes(marker), marker);
   assert.match(activity, /override fun onAnchorVisible\(bounds: NativeBannerAnchorBounds\)[\s\S]*?keepDebugControlsVisible\(\)/);
   assert.match(activity, /override fun onResume\(\)[\s\S]*?nativeRoot\?\.post \{ keepDebugControlsVisible\(\) \}/);
+  // The temporary WebView-root can be replaced: requiring a decor-root sibling
+  // prevents invisible panels even if bringToFront() is called repeatedly.
+  assert.match(activity, /if \(panel\.parent !== root\) \{[\s\S]*?root\.addView\(/);
+  assert.match(activity, /\(testControls\?\.parent as\? android\.view\.ViewGroup\)\?\.removeView\(testControls\)/);
 });
