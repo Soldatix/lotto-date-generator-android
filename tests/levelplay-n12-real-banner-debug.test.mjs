@@ -134,3 +134,13 @@ test('N12 consent/test controls stay in front of late-creating Tauri WebView',()
   assert.match(activity, /if \(panel\.parent !== root\) \{[\s\S]*?root\.addView\(/);
   assert.match(activity, /\(testControls\?\.parent as\? android\.view\.ViewGroup\)\?\.removeView\(testControls\)/);
 });
+
+test('N12 banner failure reports only numeric SDK code and never triggers another request',()=>{
+  assert.match(activity, /override fun onAdLoadFailed\(error: LevelPlayAdError\)[\s\S]*?val code = error\.errorCode/);
+  assert.match(activity, /N12_BANNER_LOAD_FAILED_CODE=\$code/);
+  assert.match(activity, /TEST banner nije učitan · kod \$code · nema ponavljanja/);
+  assert.match(activity, /N12_BANNER_DISPLAY_FAILED_CODE=\$code/);
+  assert.doesNotMatch(activity, /error\.errorMessage|Log\.[a-z]+\([^\n]*error\.toString/);
+  assert.match(activity, /consumeOneApprovedTest\(\)/);
+  assert.match(activity, /one_request_used/);
+});
