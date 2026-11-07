@@ -109,6 +109,13 @@ jobs:
           python3 ci/android-levelplay-manifest-audit/inspect_lifecycle_providers.py
           echo 'N11_B_PROVIDER_METHODS_STATIC_ONLY=TRUE'
 
+      - name: N11-C inspect obfuscated lifecycle delegate method calls (NO SDK execution)
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 ci/android-levelplay-manifest-audit/inspect_delegated_provider_calls.py
+          echo 'N11_C_STATIC_ONLY=TRUE; SDK_INSTALL=HOLD'
+
       - name: Diff permissions, AdQuality components and exported surfaces
         shell: bash
         run: |
