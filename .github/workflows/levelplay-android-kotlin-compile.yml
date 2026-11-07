@@ -73,7 +73,8 @@ jobs:
           cp "src-tauri/gen/android/app/src/levelplayPilot/java/org/appsandgames/datelottogenerator/LevelPlayNativeBannerPlacementDraft.kt" "$dest/"
           cp "src-tauri/gen/android/app/src/levelplayPilot/java/org/appsandgames/datelottogenerator/LevelPlaySdkBannerDraft.kt" "$dest/"
           cp "src-tauri/gen/android/app/src/n7ConsentPilot/java/org/appsandgames/datelottogenerator/N7UmpPreviewActivity.kt" "$dest/"
-          test "$(find "$dest" -maxdepth 1 -name '*.kt' | wc -l)" -eq 11
+          cp "src-tauri/gen/android/app/src/n7ConsentPilot/java/org/appsandgames/datelottogenerator/N8UmpPrivacyOptionsActivity.kt" "$dest/"
+          test "$(find "$dest" -maxdepth 1 -name '*.kt' | wc -l)" -eq 12
 
       - name: Set Gradle distribution network timeout in CI workspace only
         shell: bash
