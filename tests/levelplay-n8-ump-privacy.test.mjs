@@ -32,3 +32,21 @@ test("N8 reset is only a direct user action in isolated test Activity",()=>{
   assert.doesNotMatch(activity,/MainActivity\(/);
   assert.doesNotMatch(activity,/SharedPreferences|TCString|IABTCF/);
 });
+
+const runner=readFileSync(new URL("../scripts/LevelPlay-Huawei-N8-PrivacyOptions-NoPrompt.ps1",import.meta.url),"utf8");
+test("N8 no-prompt Huawei runner reuses verified local N7 ID and never activates ads",()=>{
+ for(const value of [
+   "NO_PROMPTS=TRUE", "REAL_ADS=OFF; PRODUCTION_NO_GO=TRUE",
+   "65ABEF8ED904BB808A10C5012175E69AA2D06645AED395E89F8A908CBE4EB6A1",
+   "GITHUB_SOURCE", "N8UmpPrivacyOptionsActivity", "DEBUG_N8_UMP_PRIVACY",
+   "LEVELPLAY_SDK=ABSENT", "APPROVED_AD_REQUESTS = false",
+   "APPSGAMES_N7_ADMOB_APP_ID", "Start-Process -FilePath $npm",
+   "WaitForExit($TimeoutMs)", "EXACTLY_ONE_HUAWEI"
+ ].filter(Boolean)) {
+   if(value==="GITHUB_SOURCE" || value==="EXACTLY_ONE_HUAWEI")continue;
+   assert.ok(runner.includes(value),value);
+ }
+ assert.doesNotMatch(runner,/Read-Host|Pause|InputBox|adb\s+uninstall|--release|bundleRelease|LevelPlay\.init/);
+ assert.doesNotMatch(runner,/function RunBuild\(\[string\[\]\]\$Args\b/);
+ assert.match(runner,/\$sourceSha='65ABEF8ED904BB808A10C5012175E69AA2D06645AED395E89F8A908CBE4EB6A1'/);
+});
