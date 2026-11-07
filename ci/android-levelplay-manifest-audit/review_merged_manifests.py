@@ -15,6 +15,23 @@ import xml.etree.ElementTree as ET
 
 A = "{http://schemas.android.com/apk/res/android}"
 TYPES = ("activity", "activity-alias", "provider", "service", "receiver")
+# Exact N11 baseline observed with mediation-sdk 9.5.0 + UMP 4.0.0,
+# AND a Tauri Android manifest using API-36 proxy. Change requires re-review.
+# This is a regression guard, NOT an approval for a physical SDK-enabled APK.
+OBSERVED_SDK95_COMPONENT_ADDITIONS = {
+    "activity:com.ironsource.mediationsdk.testSuite.TestSuiteActivity",
+    "activity:com.ironsource.sdk.controller.ControllerActivity",
+    "activity:com.ironsource.sdk.controller.InterstitialActivity",
+    "activity:com.ironsource.sdk.controller.OpenUrlActivity",
+    "activity:com.unity3d.ironsourceads.internal.services.InlineStoreActivity",
+    "provider:com.ironsource.lifecycle.IronsourceLifecycleProvider",
+    "provider:com.ironsource.lifecycle.LevelPlayActivityLifecycleProvider",
+}
+OBSERVED_SDK95_PERMISSION_ADDITIONS = {
+    "android.permission.ACCESS_ADSERVICES_ATTRIBUTION",
+    "android.permission.ACCESS_NETWORK_STATE",
+}
+
 DANGEROUS = (
     "READ_CONTACTS", "WRITE_CONTACTS", "READ_SMS", "SEND_SMS",
     "RECEIVE_SMS", "READ_CALL_LOG", "WRITE_CALL_LOG", "READ_PHONE_STATE",
@@ -92,6 +109,14 @@ def main() -> None:
     removed = sorted(set(base_c) - set(sdk_c))
     added_perms = sorted(sdk["permissions"] - baseline["permissions"])
     added_metadata = sorted(sdk["metadata"] - baseline["metadata"])
+
+    # Any unexpected SDK surface is a hard stop. This snapshot only verifies
+    # that the pinned 9.5.0 manifest has not drifted; the two lifecycle
+    # ContentProviders still require an explicit pre-install privacy review.
+    if set(additions) != OBSERVED_SDK95_COMPONENT_ADDITIONS:
+        failures.append("N11_UNEXPECTED_SDK95_COMPONENT_SURFACE_DRIFT")
+    if set(added_perms) != OBSERVED_SDK95_PERMISSION_ADDITIONS:
+        failures.append("N11_UNEXPECTED_SDK95_PERMISSION_SURFACE_DRIFT")
 
     print("N11_LEVELPLAY_COMPONENT_ADDITIONS=" + str(len(additions)))
     for comp in additions:
