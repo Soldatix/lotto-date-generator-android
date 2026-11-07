@@ -103,6 +103,11 @@ val n12BannerUnitId = if (n12BannerPilot)
 val n12ApprovedTest = n12BannerPilot &&
     providers.environmentVariable("APPSGAMES_N12_OWNER_TEST_APPROVAL").orNull ==
         "ENABLE_N12_HUAWEI_ONE_TEST_BANNER"
+// Never infer approval for a second ad from first-test build flags.
+// A distinct, exact value must be owner-selected at the build boundary.
+val n12SecondTestApproved = n12ApprovedTest &&
+    providers.environmentVariable("APPSGAMES_N12_SECOND_ERROR_CODE_APPROVAL").orNull ==
+        "ENABLE_N12_HUAWEI_SECOND_TEST_ERROR_CODE"
 if (n12BannerPilot &&
     ((n12AppKey.isNotEmpty() && !Regex("""[A-Za-z0-9_-]{6,128}""").matches(n12AppKey)) ||
      (n12BannerUnitId.isNotEmpty() &&
@@ -216,6 +221,9 @@ android {
             n12AdMobAppId
         buildTypes.getByName("debug").buildConfigField(
             "boolean", "N12_OWNER_TEST_AD_REQUESTS_APPROVED", n12ApprovedTest.toString()
+        )
+        buildTypes.getByName("debug").buildConfigField(
+            "boolean", "N12_SECOND_TEST_ERROR_CODE_APPROVED", n12SecondTestApproved.toString()
         )
         buildTypes.getByName("debug").buildConfigField(
             "String", "N12_APP_KEY", "\"$n12AppKey\""
