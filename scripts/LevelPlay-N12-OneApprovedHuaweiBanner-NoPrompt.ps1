@@ -240,17 +240,90 @@ if ($huawei.Count -ne 1) {
 $targetSerial = $huawei[0]
 Write-Output 'N12_DEVICE_HUAWEI_CMR_W09_API28_ARM64=PASS'
 
-# Never uninstall or update the production package.
-$productionBefore = NativeChecked $adb @(
+# Android returns exit 1 for 'pm path' on an ABSENT package. Both
+# production and the pilot can legitimately be absent on this tablet.
+# List exact package names with pm list packages (exit 0 when absent)
+# instead of treating normal absence as an ADB error.
+$beforeList = NativeChecked $adb @(
+    '-s',$targetSerial,'shell','pm','list','packages'
+)
+$prodRegex = '(?m)^package:org\.appsandgames\.datelottogenerator\s*
+
+# Exactly one installation attempt, isolated .levelplaypilot package.
+$installResult = NativeChecked $adb @('-s',$targetSerial,'install','-r',$apk)
+if ($installResult -notmatch 'Success') {
+    throw 'N12_PILOT_INSTALL_NOT_CONFIRMED'
+}
+$afterList = NativeChecked $adb @(
+    '-s',$targetSerial,'shell','pm','list','packages'
+)
+if ($afterList -notmatch $pilotRegex) {
+    throw 'N12_PILOT_PACKAGE_NOT_FOUND_AFTER_INSTALL'
+}
+$productionAfter = [bool]($afterList -match $prodRegex)
+if ($productionBefore -ne $productionAfter) {
+    throw 'N12_PRODUCTION_PACKAGE_STATE_CHANGED'
+}
+Write-Output 'N12_HUAWEI_ISOLATED_INSTALL=PASS; PRODUCTION_PACKAGE_UNCHANGED=TRUE'
+
+# Launch the N12 activity with one explicit debug Intent extra. This only
+# opens Lotto + UMP; LevelPlay init/loadAd still requires a button tap.
+$component = $pkg + '/org.appsandgames.datelottogenerator.N12LottoBannerActivity'
+$startedActivity = NativeChecked $adb @(
+    '-s',$targetSerial,'shell','am','start','-n',$component,
+    '--ez','org.appsandgames.datelottogenerator.DEBUG_N12_TEST_BANNER','true'
+)
+if ($startedActivity -notmatch 'Starting: Intent' -and
+    $startedActivity -notmatch 'Warning: Activity not started') {
+    throw 'N12_ACTIVITY_START_UNCONFIRMED'
+}
+Write-Output 'N12_TAURI_AND_UMP_LAUNCH=REQUESTED; LEVELPLAY_LOAD=NOT_TRIGGERED'
+Write-Output 'NEXT=ACTIVATE_UNITY_TEST_ADS_ON_REGISTERED_HUAWEI_THEN_USER_TAPS_TEST'
+Write-Output 'NO_PRODUCTION_INSTALL=TRUE; SINGLE_REQUEST_GUARD=ON'
+Write-Output 'PRODUCTION_NO_GO=TRUE'
+
+
+$pilotRegex = '(?m)^package:org\.appsandgames\.datelottogenerator\.levelplaypilot\s*
+
+# Exactly one installation attempt, isolated .levelplaypilot package.
+$installResult = NativeChecked $adb @('-s',$targetSerial,'install','-r',$apk)
+if ($installResult -notmatch 'Success') {
+    throw 'N12_PILOT_INSTALL_NOT_CONFIRMED'
+}
+$installed = NativeChecked $adb @('-s',$targetSerial,'shell','pm','path',$pkg)
+if ($installed -notmatch 'package:') {
+    throw 'N12_PILOT_PACKAGE_NOT_FOUND_AFTER_INSTALL'
+}
+$productionAfter = NativeChecked $adb @(
     '-s',$targetSerial,'shell','pm','path',
     'org.appsandgames.datelottogenerator'
 )
-$existing = NativeChecked $adb @(
-    '-s',$targetSerial,'shell','pm','path',$pkg
-)
-if ($existing -match 'package:' -and $existing -notmatch 'base.apk') {
-    throw 'N12_EXISTING_PILOT_PACKAGE_UNEXPECTED_STATE'
+if ($productionBefore -cne $productionAfter) {
+    throw 'N12_PRODUCTION_PACKAGE_STATE_CHANGED'
 }
+Write-Output 'N12_HUAWEI_ISOLATED_INSTALL=PASS; PRODUCTION_PACKAGE_UNCHANGED=TRUE'
+
+# Launch the N12 activity with one explicit debug Intent extra. This only
+# opens Lotto + UMP; LevelPlay init/loadAd still requires a button tap.
+$component = $pkg + '/org.appsandgames.datelottogenerator.N12LottoBannerActivity'
+$startedActivity = NativeChecked $adb @(
+    '-s',$targetSerial,'shell','am','start','-n',$component,
+    '--ez','org.appsandgames.datelottogenerator.DEBUG_N12_TEST_BANNER','true'
+)
+if ($startedActivity -notmatch 'Starting: Intent' -and
+    $startedActivity -notmatch 'Warning: Activity not started') {
+    throw 'N12_ACTIVITY_START_UNCONFIRMED'
+}
+Write-Output 'N12_TAURI_AND_UMP_LAUNCH=REQUESTED; LEVELPLAY_LOAD=NOT_TRIGGERED'
+Write-Output 'NEXT=ACTIVATE_UNITY_TEST_ADS_ON_REGISTERED_HUAWEI_THEN_USER_TAPS_TEST'
+Write-Output 'NO_PRODUCTION_INSTALL=TRUE; SINGLE_REQUEST_GUARD=ON'
+Write-Output 'PRODUCTION_NO_GO=TRUE'
+
+
+$productionBefore = [bool]($beforeList -match $prodRegex)
+$pilotBefore = [bool]($beforeList -match $pilotRegex)
+Write-Output ('N12_PRODUCTION_PACKAGE_PRESENT_BEFORE='+$productionBefore)
+Write-Output ('N12_EXISTING_TEST_PACKAGE_PRESENT_BEFORE='+$pilotBefore)
 
 # Exactly one installation attempt, isolated .levelplaypilot package.
 $installResult = NativeChecked $adb @('-s',$targetSerial,'install','-r',$apk)
