@@ -38,15 +38,15 @@ function Assert-Source([string]$path,[string]$needle) {
 }
 $git = (Get-Command git.exe -ErrorAction Stop).Source
 $npm = (Get-Command npm.cmd -ErrorAction Stop).Source
-$base = (Invoke-Checked $git @('-C',$repo,'rev-parse','--show-toplevel')).Replace('/','\')
+$base = (Invoke-Checked -exe $git -argv @('-C',$repo,'rev-parse','--show-toplevel')).Replace('/','\')
 if ($base -ne $repo.Replace('/','\')) { throw 'WRONG_REPO_ROOT' }
 if (-not $repo.StartsWith((Join-Path $env:TEMP 'DateLotto-N7-'),[StringComparison]::OrdinalIgnoreCase)) {
     throw 'DISPOSABLE_CLONE_REQUIRED'
 }
-if ((Invoke-Checked $git @('-C',$repo,'branch','--show-current')) -ne $branch) {
+if ((Invoke-Checked -exe $git -argv @('-C',$repo,'branch','--show-current')) -ne $branch) {
     throw 'WRONG_GIT_BRANCH'
 }
-if ((Invoke-Checked $git @('-C',$repo,'status','--porcelain')) -ne '') {
+if ((Invoke-Checked -exe $git -argv @('-C',$repo,'status','--porcelain')) -ne '') {
     throw 'DIRTY_WORKTREE'
 }
 $gradle = Join-Path $repo 'src-tauri\gen\android\app\build.gradle.kts'
@@ -72,15 +72,15 @@ foreach ($p in @($adb,(Join-Path $java 'bin\java.exe'),
                   (Join-Path $sdk 'platforms\android-37.0\android.jar'))) {
     if (-not (Test-Path -LiteralPath $p)) { throw ('MISSING_PREREQUISITE_'+$p) }
 }
-$list = Invoke-Checked $adb @('devices')
+$list = Invoke-Checked -exe $adb -argv @('devices')
 $devices = @([regex]::Matches($list,'(?m)^(\S+)\s+device\s*$'))
 if ($devices.Count -ne 1) { throw 'EXACTLY_ONE_AUTHORIZED_DEVICE_REQUIRED' }
 $serial = $devices[0].Groups[1].Value
 function Adb([string[]]$cmd) {
-    return Invoke-Checked $adb (@('-s',$serial)+$cmd)
+    return Invoke-Checked -exe $adb -argv (@('-s',$serial)+$cmd)
 }
-if ((Adb @('shell','getprop','ro.product.model')) -ne 'CMR-W09' -or
-    (Adb @('shell','getprop','ro.build.version.sdk')) -ne '28') {
+if ((Adb -cmd @('shell','getprop','ro.product.model')) -ne 'CMR-W09' -or
+    (Adb -cmd @('shell','getprop','ro.build.version.sdk')) -ne '28') {
     throw 'HUAWEI_CMR_W09_ANDROID9_REQUIRED'
 }
 Write-Output 'HUAWEI_CMR_W09=PASS'
@@ -137,10 +137,10 @@ if (-not (Test-Path -LiteralPath $apk) -or
 $aapt = @(Get-ChildItem -LiteralPath (Join-Path $sdk 'build-tools') -Filter aapt.exe -Recurse -File |
           Sort-Object FullName -Descending | Select-Object -First 1)
 if ($aapt.Count -ne 1) { throw 'AAPT_NOT_FOUND' }
-$badging=Invoke-Checked $aapt[0].FullName @('dump','badging',$apk)
+$badging=Invoke-Checked -exe $aapt[0].FullName -argv @('dump','badging',$apk)
 if ($badging -notmatch "package: name='org\.appsandgames\.datelottogenerator\.levelplaypilot'" -or
     $badging -notmatch 'application-debuggable') { throw 'PILOT_DEBUG_APK_IDENTITY_FAILED' }
-$xml=Invoke-Checked $aapt[0].FullName @('dump','xmltree',$apk,'AndroidManifest.xml')
+$xml=Invoke-Checked -exe $aapt[0].FullName -argv @('dump','xmltree',$apk,'AndroidManifest.xml')
 if ($xml -notmatch 'N7UmpPreviewActivity' -or
     $xml -notmatch 'com.google.android.gms.ads.APPLICATION_ID') {
     throw 'N7_ACTIVITY_OR_MANIFEST_APP_ID_MISSING'
@@ -171,26 +171,26 @@ if(-not $InstallAndLaunch){
 }
 $approval=Read-Host 'Za testni UMP poziv (bez oglasa) upisi: APPROVE N7 UMP'
 if($approval -cne 'APPROVE N7 UMP'){throw 'N7_TEST_NOT_APPROVED'}
-$before=(Adb @('shell','pm','list','packages')) -split '\r?\n'
+$before=(Adb -cmd @('shell','pm','list','packages')) -split '\r?\n'
 $productionBefore=($before -contains ('package:'+$prodPkg))
 New-Item -ItemType Directory -Path $report -Force | Out-Null
 Write-Output 'ISOLATED_HUAWEI_INSTALL=START'
-$install=Adb @('install','-r',$apk)
+$install=Adb -cmd @('install','-r',$apk)
 if($install -notmatch '(?m)^Success\s*$'){throw 'N7_INSTALL_FAILED'}
 Write-Output 'ISOLATED_HUAWEI_INSTALL=PASS'
 $component=$testPkg+'/org.appsandgames.datelottogenerator.N7UmpPreviewActivity'
-$launch=Adb @('shell','am','start','-W','-n',$component,'--ez',
+$launch=Adb -cmd @('shell','am','start','-W','-n',$component,'--ez',
     'org.appsandgames.datelottogenerator.DEBUG_N7_UMP_PREVIEW','true')
 if($launch -notmatch 'Status:\s*ok'){throw 'N7_ACTIVITY_LAUNCH_FAILED'}
 Start-Sleep -Seconds 4
-$logs=Adb @('logcat','-d','-v','brief','-t','1200','-s','DateLottoN7UMP:V','*:S')
+$logs=Adb -cmd @('logcat','-d','-v','brief','-t','1200','-s','DateLottoN7UMP:V','*:S')
 [IO.File]::WriteAllText((Join-Path $report 'N7-UMP-generic-logs.txt'),$logs,
     (New-Object System.Text.UTF8Encoding($false)))
 $remote='/sdcard/Download/DateLotto-N7-UMP.png'
-$null=Adb @('shell','screencap','-p',$remote)
-$null=Adb @('pull',$remote,(Join-Path $report 'N7-UMP-screen.png'))
-$null=Adb @('shell','rm',$remote)
-$after=(Adb @('shell','pm','list','packages')) -split '\r?\n'
+$null=Adb -cmd @('shell','screencap','-p',$remote)
+$null=Adb -cmd @('pull',$remote,(Join-Path $report 'N7-UMP-screen.png'))
+$null=Adb -cmd @('shell','rm',$remote)
+$after=(Adb -cmd @('shell','pm','list','packages')) -split '\r?\n'
 if(($after -contains ('package:'+$prodPkg)) -ne $productionBefore){
     throw 'PRODUCTION_PACKAGE_STATE_CHANGED'
 }
