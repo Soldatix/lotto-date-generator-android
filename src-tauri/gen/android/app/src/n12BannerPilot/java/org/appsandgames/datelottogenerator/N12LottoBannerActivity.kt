@@ -56,6 +56,7 @@ internal class N12LottoBannerActivity : TauriActivity(), NativeBannerAnchorListe
     private var consentRefreshed = false
     private var consentFormComplete = false
     private var sdkInitialized = false
+    private var oneTestAttempted = false
     private var sdkInitializing = false
     private var permissionWithdrawn = false
     private var finalized = false
@@ -221,7 +222,7 @@ internal class N12LottoBannerActivity : TauriActivity(), NativeBannerAnchorListe
             BuildConfig.N12_OWNER_TEST_AD_REQUESTS_APPROVED &&
             BuildConfig.N12_APP_KEY.isNotBlank() &&
             BuildConfig.N12_BANNER_UNIT_ID.isNotBlank() &&
-            !sdkInitializing && !sdkInitialized &&
+            !sdkInitializing && !sdkInitialized && !oneTestAttempted &&
             hasExplicitFullTcfOptIn()
     }
 
@@ -235,7 +236,7 @@ internal class N12LottoBannerActivity : TauriActivity(), NativeBannerAnchorListe
         if (!ownerDebugOnly() ||
             !BuildConfig.N12_OWNER_TEST_AD_REQUESTS_APPROVED ||
             !hasExplicitFullTcfOptIn() ||
-            sdkInitialized || sdkInitializing ||
+            sdkInitialized || sdkInitializing || oneTestAttempted ||
             BuildConfig.N12_APP_KEY.isBlank() || BuildConfig.N12_BANNER_UNIT_ID.isBlank()) return
         sdkInitializing = true
         refreshControls()
@@ -280,10 +281,13 @@ internal class N12LottoBannerActivity : TauriActivity(), NativeBannerAnchorListe
         val ad = LevelPlayBannerAdView(this, BuildConfig.N12_BANNER_UNIT_ID, config)
         ad.bannerListener = object : LevelPlayBannerAdViewListener {
             override fun onAdLoaded(adInfo: LevelPlayAdInfo) {
-                if (ownerDebugOnly()) status("TEST banner učitan")
+                // Approved scope is ONE test-load, not repeating refreshes.
+                banner?.pauseAutoRefresh()
+                if (ownerDebugOnly()) status("TEST banner učitan · refresh OFF")
             }
             override fun onAdLoadFailed(error: LevelPlayAdError) {
-                if (ownerDebugOnly()) status("TEST banner nije učitan")
+                banner?.pauseAutoRefresh()
+                if (ownerDebugOnly()) status("TEST banner nije učitan · nema ponavljanja")
             }
             override fun onAdDisplayed(adInfo: LevelPlayAdInfo) {}
             override fun onAdDisplayFailed(adInfo: LevelPlayAdInfo, error: LevelPlayAdError) {}
@@ -301,7 +305,9 @@ internal class N12LottoBannerActivity : TauriActivity(), NativeBannerAnchorListe
         // This is the *only* call that requests an ad. It is unreachable unless
         // the separate build gate was enabled and the user pressed TEST.
         if (ownerDebugOnly() && hasExplicitFullTcfOptIn() &&
-            BuildConfig.N12_OWNER_TEST_AD_REQUESTS_APPROVED) {
+            BuildConfig.N12_OWNER_TEST_AD_REQUESTS_APPROVED &&
+            !oneTestAttempted) {
+            oneTestAttempted = true
             ad.loadAd()
         } else disableAndDestroyBanner()
     }
