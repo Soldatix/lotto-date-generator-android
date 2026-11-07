@@ -8,6 +8,7 @@ const webWorkflow=read('.github/workflows/web-pwa-settings-check.yml');
 const auditGradle=read('ci/android-levelplay-manifest-audit/build.gradle.kts');
 const manifestReview=read('ci/android-levelplay-manifest-audit/review_merged_manifests.py');
 const providerAudit=read('ci/android-levelplay-manifest-audit/inspect_lifecycle_providers.py');
+const delegateAudit=read('ci/android-levelplay-manifest-audit/inspect_delegated_provider_calls.py');
 const n11=read('scripts/LevelPlay-N11-CombinedSDK-DebugBuild-NoInstall.ps1');
 const appGradle=read('src-tauri/gen/android/app/build.gradle.kts');
 
@@ -65,4 +66,21 @@ test('N11-B statically inventories SDK 9.5 lifecycle provider onCreate without r
   ])assert.ok(providerAudit.includes(value),value);
   assert.match(manifestWorkflow,/inspect_lifecycle_providers\.py/);
   assert.doesNotMatch(providerAudit,/adb|loadAd\(|LevelPlay\.init\(|Read-Host|http\.client|requests\.get/);
+});
+
+test('N11-C audits obfuscated provider delegates with pinned AAR and never executes SDK',()=>{
+  for(const marker of [
+    'N11_C_PINNED_AAR=mediation-sdk-9.5.0.aar',
+    'com.ironsource.lifecycle.b',
+    'com.ironsource.lifecycle.LevelPlayActivityLifecycleProvider',
+    'javap', 'METHOD_DECL', 'CALL.search',
+    'N11_C_HELPER_TARGET_SIGNATURE_CHANGED',
+    'N11_C_ACTIVITY_DELEGATE_SIGNATURE_CHANGED',
+    'N11_C_DELEGATED_BYTECODE_REVIEW=PASS',
+    'N11_C_PRIVACY_SAFETY=STILL_NOT_PROVEN',
+    'N11_C_SDK_INSTALL=HOLD',
+    'N11_C_NO_APK_NO_INSTALL_NO_SDK_EXECUTION_NO_AD_REQUESTS=TRUE'
+  ])assert.ok(delegateAudit.includes(marker), marker);
+  assert.match(manifestWorkflow,/inspect_delegated_provider_calls\.py/);
+  assert.doesNotMatch(delegateAudit,/adb\s|LevelPlay\.init\(|loadAd\(|requests\.get|urllib\.request|Read-Host/);
 });
