@@ -308,14 +308,24 @@ internal class N12LottoBannerActivity : TauriActivity(), NativeBannerAnchorListe
 
     private fun moveBannerTo(fit: N4BannerPixelPlacement) {
         val ad = banner ?: return
-        ad.layoutParams = FrameLayout.LayoutParams(
-            fit.widthPx, fit.heightPx, Gravity.TOP or Gravity.START
-        ).apply {
-            leftMargin = fit.leftPx
-            topMargin = fit.topPx
+        val old = ad.layoutParams as? FrameLayout.LayoutParams
+        if (old == null || old.width != fit.widthPx ||
+            old.height != fit.heightPx || old.leftMargin != fit.leftPx ||
+            old.topMargin != fit.topPx
+        ) {
+            ad.layoutParams = FrameLayout.LayoutParams(
+                fit.widthPx, fit.heightPx, Gravity.TOP or Gravity.START
+            ).apply {
+                leftMargin = fit.leftPx
+                topMargin = fit.topPx
+            }
         }
-        ad.visibility = View.VISIBLE
-        ad.resumeAutoRefresh()
+        // N5 polls the anchor roughly every 450 ms. Repeatedly resuming the
+        // SDK refresh timer on every poll would be incorrect.
+        if (ad.visibility != View.VISIBLE) {
+            ad.visibility = View.VISIBLE
+            ad.resumeAutoRefresh()
+        }
     }
 
     override fun onAnchorVisible(bounds: NativeBannerAnchorBounds) {
