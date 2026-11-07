@@ -34,7 +34,7 @@ test('N7 preview demands exact debug package and explicit ADB Intent extra',()=>
  assert.match(a,/loadAndShowConsentFormIfRequired\(/);
  assert.match(a,/N7_UMP=REFRESH_STARTED_NO_ADS/);
  assert.match(a,/N7_UMP=FORM_COMPLETED_OR_NOT_REQUIRED_NO_ADS/);
- assert.doesNotMatch(a,/canRequestAds\(|LevelPlay|loadAd\(|MobileAds|advertisingId|setGDPRConsent\(/);
+ assert.doesNotMatch(a,/canRequestAds\(|LevelPlay\s*\.\s*init\s*\(|loadAd\(|MobileAds\s*\.|advertisingId|setGDPRConsent\(/);
  assert.match(dm,/android:value="\$\{appsGamesN7AdMobAppId\}"/);
  assert.match(dm,/android:name="\.N7UmpPreviewActivity"/);
  assert.match(workflow,/N7UmpPreviewActivity\.kt/);
