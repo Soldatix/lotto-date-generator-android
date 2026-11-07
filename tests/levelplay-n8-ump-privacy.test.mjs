@@ -40,13 +40,18 @@ test("N8 no-prompt Huawei runner reuses verified local N7 ID and never activates
    "65ABEF8ED904BB808A10C5012175E69AA2D06645AED395E89F8A908CBE4EB6A1",
    "GITHUB_SOURCE", "N8UmpPrivacyOptionsActivity", "DEBUG_N8_UMP_PRIVACY",
    "LEVELPLAY_SDK=ABSENT", "APPROVED_AD_REQUESTS = false",
-   "APPSGAMES_N7_ADMOB_APP_ID", "Start-Process -FilePath $npm",
-   "WaitForExit($TimeoutMs)", "EXACTLY_ONE_HUAWEI"
+   "APPSGAMES_N7_ADMOB_APP_ID", "& $npm @CommandArgs",
+   "$nativeExit=$LASTEXITCODE", "N8_NPM_CI=REUSE_COMPLETED_INSTALL",
+   "EXACTLY_ONE_HUAWEI"
  ].filter(Boolean)) {
    if(value==="GITHUB_SOURCE" || value==="EXACTLY_ONE_HUAWEI")continue;
    assert.ok(runner.includes(value),value);
  }
  assert.doesNotMatch(runner,/Read-Host|Pause|InputBox|adb\s+uninstall|--release|bundleRelease|LevelPlay\.init/);
  assert.doesNotMatch(runner,/function RunBuild\(\[string\[\]\]\$Args\b/);
+ assert.doesNotMatch(runner,/Start-Process\s+-FilePath\s+\$npm|\.WaitForExit\(/);
+ assert.match(runner,/\$null -eq \$nativeExit -or \$nativeExit -ne 0/);
+ assert.match(runner,/node_modules\\\\\.package-lock\.json/);
+
  assert.match(runner,/\$sourceSha='65ABEF8ED904BB808A10C5012175E69AA2D06645AED395E89F8A908CBE4EB6A1'/);
 });
