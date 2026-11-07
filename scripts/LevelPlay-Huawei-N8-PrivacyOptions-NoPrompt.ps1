@@ -89,8 +89,8 @@ $manifest=Checked -Exe $aapt[0].FullName -Arguments @('dump','xmltree',$sourceAp
 if(-not $manifest.Contains('com.google.android.gms.ads.APPLICATION_ID')){
     throw 'SOURCE_N7_ADMOB_META_MISSING'
 }
-$matches=[regex]::Matches($manifest,'ca-app-pub-\d{16}~\d{10}')
-$unique=@($matches | ForEach-Object Value | Select-Object -Unique)
+$appIdMatches=[regex]::Matches($manifest,'ca-app-pub-\d{16}~\d{10}')
+$unique=@($appIdMatches | ForEach-Object Value | Select-Object -Unique)
 if($unique.Count -ne 1){throw 'SOURCE_N7_ADMOB_APP_ID_NOT_UNIQUE'}
 $privateId=$unique[0]
 $unique=@()
