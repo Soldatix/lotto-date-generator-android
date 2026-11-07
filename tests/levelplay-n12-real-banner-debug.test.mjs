@@ -14,6 +14,7 @@ const ci = load('.github/workflows/levelplay-android-kotlin-compile.yml');
 const harness = load('ci/android-levelplay-compile/build.gradle.kts');
 const runner = load('scripts/LevelPlay-N12-BannerBuildOnly-NoPrompt.ps1');
 const webCi = load('.github/workflows/web-pwa-settings-check.yml');
+const oneApproved = load('scripts/LevelPlay-N12-OneApprovedHuaweiBanner-NoPrompt.ps1');
 
 test('N12 is an isolated debug-only Tauri Activity and never the production MainActivity', () => {
   assert.match(activity, /class N12LottoBannerActivity : TauriActivity\(\)/);
@@ -85,4 +86,30 @@ test('N12 single-use Windows banner APK script never installs/starts SDK or enab
   assert.doesNotMatch(runner,/Read-Host|adb\.exe|Invoke-WebRequest|Invoke-RestMethod|Start-Process/);
   assert.doesNotMatch(runner,/\binstall\s+-r\b|\badb\s+shell\b/);
   assert.match(webCi,/N12_POWERSHELL_SYNTAX=PASS/);
+});
+
+test('N12 owner-approved test is exactly one SDK load across process restarts',()=>{
+  for(const marker of [
+    'one_request_used','consumeOneApprovedTest()',
+    'alreadyUsedOneApprovedTest()','banner?.pauseAutoRefresh()',
+    'oneTestAttempted = true'
+  ])assert.ok(activity.includes(marker),marker);
+  assert.match(activity,/BuildConfig\.N12_OWNER_TEST_AD_REQUESTS_APPROVED\s*&&\s*consumeOneApprovedTest\(\)/);
+});
+
+test('N12 authorized runner cannot install on OPPO or touch production app',()=>{
+  for(const marker of [
+    'N12_EXPLICIT_APPROVAL_REQUIRED','ENABLE_N12_HUAWEI_ONE_TEST_BANNER',
+    'N12_EXACTLY_ONE_HUAWEI_CMR_W09_ANDROID9_REQUIRED',
+    'N12_DEVICE_HUAWEI_CMR_W09_API28_ARM64=PASS',
+    'org.appsandgames.datelottogenerator.levelplaypilot',
+    'N12_PRODUCTION_PACKAGE_STATE_CHANGED',
+    'N12_HUAWEI_ISOLATED_INSTALL=PASS',
+    'DEBUG_N12_TEST_BANNER',
+    'N12_TAURI_AND_UMP_LAUNCH=REQUESTED; LEVELPLAY_LOAD=NOT_TRIGGERED',
+    'NEXT=ACTIVATE_UNITY_TEST_ADS_ON_REGISTERED_HUAWEI_THEN_USER_TAPS_TEST'
+  ])assert.ok(oneApproved.includes(marker),marker);
+  assert.doesNotMatch(oneApproved,/\b(?:uninstall|am force-stop|install -r)\s+org\.appsandgames\.datelottogenerator\b/);
+  assert.doesNotMatch(oneApproved,/Read-Host|Invoke-WebRequest|Invoke-RestMethod/);
+  assert.match(webCi,/N12_HUAWEI_ONE_TEST_POWERSHELL_SYNTAX=PASS/);
 });
