@@ -12,6 +12,8 @@ const main = load(src + 'main/java/org/appsandgames/datelottogenerator/MainActiv
 const gradle = load('src-tauri/gen/android/app/build.gradle.kts');
 const ci = load('.github/workflows/levelplay-android-kotlin-compile.yml');
 const harness = load('ci/android-levelplay-compile/build.gradle.kts');
+const runner = load('scripts/LevelPlay-N12-BannerBuildOnly-NoPrompt.ps1');
+const webCi = load('.github/workflows/web-pwa-settings-check.yml');
 
 test('N12 is an isolated debug-only Tauri Activity and never the production MainActivity', () => {
   assert.match(activity, /class N12LottoBannerActivity : TauriActivity\(\)/);
@@ -64,4 +66,23 @@ test('N12 uses verified N5 placement and never changes default N3/normal pipelin
   assert.match(ci, /-eq 17/);
   assert.match(harness, /N12_OWNER_TEST_AD_REQUESTS_APPROVED", "false"/);
   assert.match(gradle, /APPSGAMES_N7_ADMOB_APP_ID/);
+});
+
+test('N12 single-use Windows banner APK script never installs/starts SDK or enables test requests',()=>{
+  for(const marker of [
+    'NO_PROMPTS=TRUE; NO_ADB=TRUE; NO_INSTALL=TRUE; NO_LAUNCH=TRUE',
+    'N12_DISPOSABLE_CLONE_REQUIRED',
+    'N12_SOURCE_GUARD_',
+    'N12_BUILD_ONLY_AD_REQUEST_APPROVAL_MUST_BE_UNSET',
+    'N12_PRECONSENT_SDK_PROVIDER_PRESENT',
+    'N12_N8_UMP_SOURCE_APK_HASH_MISMATCH',
+    'APPSGAMES_N12_LEVELPLAY_APP_KEY',
+    'APPSGAMES_N12_LEVELPLAY_BANNER_UNIT_ID',
+    'ORG_GRADLE_PROJECT_appsGamesN12LottoBannerPilot',
+    'N12_BUILD=PASS; N12_MANIFEST=PASS; DEBUG_PACKAGE_ISOLATION=PASS',
+    'TEST_AD_REQUESTS=OFF; REAL_ADS=OFF; PRODUCTION_NO_GO=TRUE'
+  ])assert.ok(runner.includes(marker),marker);
+  assert.doesNotMatch(runner,/Read-Host|adb\.exe|Invoke-WebRequest|Invoke-RestMethod|Start-Process/);
+  assert.doesNotMatch(runner,/\binstall\s+-r\b|\badb\s+shell\b/);
+  assert.match(webCi,/N12_POWERSHELL_SYNTAX=PASS/);
 });
