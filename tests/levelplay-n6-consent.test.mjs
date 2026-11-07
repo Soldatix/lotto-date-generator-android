@@ -19,7 +19,7 @@ test('N6 UMP 4.0.0 strictly in SDK opt-in source and disposable compile-only CI'
   assert.match(ciGradle,/com\.google\.android\.ump:user-messaging-platform:4\.0\.0/);
   assert.match(workflow,/N6UmpConsentApiDraft\.kt/);
   assert.match(workflow,/N6AdMobReadinessGate\.kt/);
-  assert.match(workflow,/-eq 13/);
+  assert.match(workflow,/-eq 15/);
   assert.doesNotMatch(main,/N6UmpConsentApiDraft|UserMessagingPlatform|N6AdMobReadinessGate/);
   assert.doesNotMatch(manifest,/com\.google\.android\.gms\.ads\.APPLICATION_ID/);
 });
