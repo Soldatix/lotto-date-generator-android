@@ -247,8 +247,13 @@ Write-Output 'N12_DEVICE_HUAWEI_CMR_W09_API28_ARM64=PASS'
 $beforeList = NativeChecked $adb @(
     '-s',$targetSerial,'shell','pm','list','packages'
 )
-$prodRegex = '(?m)^package:org\.appsandgames\.datelottogenerator\s*
-
+$prodToken = 'package:org.appsandgames.datelottogenerator'
+$pilotToken = 'package:org.appsandgames.datelottogenerator.levelplaypilot'
+$beforePackages = @($beforeList -split '\r?\n')
+$productionBefore = ($beforePackages -contains $prodToken)
+$pilotBefore = ($beforePackages -contains $pilotToken)
+Write-Output ('N12_PRODUCTION_PACKAGE_PRESENT_BEFORE='+$productionBefore)
+Write-Output ('N12_EXISTING_TEST_PACKAGE_PRESENT_BEFORE='+$pilotBefore)
 # Exactly one installation attempt, isolated .levelplaypilot package.
 $installResult = NativeChecked $adb @('-s',$targetSerial,'install','-r',$apk)
 if ($installResult -notmatch 'Success') {
@@ -257,10 +262,11 @@ if ($installResult -notmatch 'Success') {
 $afterList = NativeChecked $adb @(
     '-s',$targetSerial,'shell','pm','list','packages'
 )
-if ($afterList -notmatch $pilotRegex) {
+$afterPackages = @($afterList -split '\r?\n')
+if ($afterPackages -notcontains $pilotToken) {
     throw 'N12_PILOT_PACKAGE_NOT_FOUND_AFTER_INSTALL'
 }
-$productionAfter = [bool]($afterList -match $prodRegex)
+$productionAfter = ($afterPackages -contains $prodToken)
 if ($productionBefore -ne $productionAfter) {
     throw 'N12_PRODUCTION_PACKAGE_STATE_CHANGED'
 }
