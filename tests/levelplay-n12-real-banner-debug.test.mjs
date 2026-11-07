@@ -15,6 +15,7 @@ const harness = load('ci/android-levelplay-compile/build.gradle.kts');
 const runner = load('scripts/LevelPlay-N12-BannerBuildOnly-NoPrompt.ps1');
 const webCi = load('.github/workflows/web-pwa-settings-check.yml');
 const oneApproved = load('scripts/LevelPlay-N12-OneApprovedHuaweiBanner-NoPrompt.ps1');
+const secondApproved = load('scripts/LevelPlay-N12-SecondApprovedHuaweiErrorCode-NoPrompt.ps1');
 
 test('N12 is an isolated debug-only Tauri Activity and never the production MainActivity', () => {
   assert.match(activity, /class N12LottoBannerActivity : TauriActivity\(\)/);
@@ -143,4 +144,38 @@ test('N12 banner failure reports only numeric SDK code and never triggers anothe
   assert.doesNotMatch(activity, /error\.errorMessage|Log\.[a-z]+\([^\n]*error\.toString/);
   assert.match(activity, /consumeOneApprovedTest\(\)/);
   assert.match(activity, /one_request_used/);
+});
+
+test('Second owner-approved diagnostic load requires first attempt evidence, distinct build approval and is single-use',()=>{
+  for(const marker of [
+    'N12_SECOND_TEST_ERROR_CODE_APPROVED',
+    'second_error_code_request_used',
+    'one_request_used',
+    'return !firstUsed || prefs.getBoolean("second_error_code_request_used", false)',
+    'val saved = oneTestPrefs().edit().putBoolean(name, true).commit()',
+    'N12_BANNER_LOAD_FAILED_CODE=',
+    'ad.pauseAutoRefresh()'
+  ])assert.ok(activity.includes(marker),marker);
+  assert.match(gradle,/APPSGAMES_N12_SECOND_ERROR_CODE_APPROVAL/);
+  assert.match(gradle,/ENABLE_N12_HUAWEI_SECOND_TEST_ERROR_CODE/);
+  assert.match(gradle,/n12SecondTestApproved = n12ApprovedTest &&/);
+  assert.match(harness,/N12_SECOND_TEST_ERROR_CODE_APPROVED", "false"/);
+  assert.doesNotMatch(activity,/\bad\.resumeAutoRefresh\(\)/);
+});
+
+test('Second-approved Huawei-only runner preserves first request and never silently starts SDK',()=>{
+  for(const marker of [
+    'N12_SECOND_EXPLICIT_APPROVAL_REQUIRED',
+    'ENABLE_N12_HUAWEI_SECOND_TEST_ERROR_CODE',
+    'APPSGAMES_N12_SECOND_ERROR_CODE_APPROVAL',
+    'N12_EXISTING_TEST_APP_DATA=RETAINED_BY_ADB_INSTALL_R',
+    'N12_EXACTLY_ONE_HUAWEI_CMR_W09_ANDROID9_REQUIRED',
+    'N12_HUAWEI_ISOLATED_INSTALL=PASS',
+    'N12_TAURI_AND_UMP_LAUNCH=REQUESTED; LEVELPLAY_LOAD=NOT_TRIGGERED',
+    'N12_SECOND_REQUEST_SINGLE_USE_GUARD',
+    'N12_PRODUCTION_PACKAGE_STATE_CHANGED',
+    'N12_BANNER_LOAD_FAILED_CODE='
+  ])assert.ok(secondApproved.includes(marker),marker);
+  assert.doesNotMatch(secondApproved,/Read-Host|adb\s+shell\s+pm\s+clear|\buninstall\b|Invoke-RestMethod|Invoke-WebRequest/);
+  assert.match(webCi,/N12_SECOND_APPROVED_POWERSHELL_SYNTAX=PASS/);
 });
