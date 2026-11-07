@@ -102,6 +102,13 @@ jobs:
           print('N11_SDK_PLUS_UMP_MANIFEST_MERGED=PASS')
           PY
 
+      - name: Inspect resolved LevelPlay lifecycle provider bytecode (no SDK execution)
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 ci/android-levelplay-manifest-audit/inspect_lifecycle_providers.py
+          echo 'N11_B_PROVIDER_METHODS_STATIC_ONLY=TRUE'
+
       - name: Diff permissions, AdQuality components and exported surfaces
         shell: bash
         run: |
