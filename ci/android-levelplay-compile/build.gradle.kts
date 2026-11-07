@@ -20,6 +20,9 @@ android {
     buildTypes.getByName("debug").buildConfigField(
         "boolean", "N12_OWNER_TEST_AD_REQUESTS_APPROVED", "false"
     )
+    buildTypes.getByName("debug").buildConfigField(
+        "boolean", "N12_SECOND_TEST_ERROR_CODE_APPROVED", "false"
+    )
     buildTypes.getByName("debug").buildConfigField("String", "N12_APP_KEY", "\"\"")
     buildTypes.getByName("debug").buildConfigField("String", "N12_BANNER_UNIT_ID", "\"\"")
     compileOptions {
