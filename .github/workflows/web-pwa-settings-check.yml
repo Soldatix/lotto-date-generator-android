@@ -121,6 +121,24 @@ jobs:
             throw 'N12_POWERSHELL_SYNTAX_FAILED'
           }
           Write-Host 'N12_POWERSHELL_SYNTAX=PASS'
+      - name: Parse N12 one-approved Huawei test runner (never execute)
+        shell: pwsh
+        run: |
+          $path = 'scripts/LevelPlay-N12-OneApprovedHuaweiBanner-NoPrompt.ps1'
+          $tokens = $null
+          $parseErrors = $null
+          [void][System.Management.Automation.Language.Parser]::ParseFile(
+            (Resolve-Path -LiteralPath $path).Path,
+            [ref]$tokens,
+            [ref]$parseErrors
+          )
+          if ($parseErrors.Count -gt 0) {
+            foreach ($issue in $parseErrors) {
+              Write-Host ("Line " + $issue.Extent.StartLineNumber + ": " + $issue.Message)
+            }
+            throw 'N12_HUAWEI_ONE_TEST_POWERSHELL_SYNTAX_FAILED'
+          }
+          Write-Host 'N12_HUAWEI_ONE_TEST_POWERSHELL_SYNTAX=PASS'
       - name: Install locked dependencies
         run: npm ci
       - name: Production build (also creates PWA service worker)
