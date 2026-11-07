@@ -59,6 +59,24 @@ internal class NativeAnchoredBannerProbe(private val activity: Activity) {
         anchorListener = listener
     }
 
+    /**
+     * N12-only debug pilot hook. The default production MainActivity never
+     * supplies a listener, and the legacy N3 registration remains disabled.
+     * The caller must be the distinct N12 Tauri test Activity, explicitly
+     * launched by the owner with its boolean debug Intent extra.
+     */
+    fun registerN12IsolatedBannerListener(listener: NativeBannerAnchorListener) {
+        check(Looper.myLooper() == Looper.getMainLooper())
+        if (activity.packageName != "org.appsandgames.datelottogenerator.levelplaypilot" ||
+            (activity.applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) == 0 ||
+            activity.javaClass.simpleName != "N12LottoBannerActivity" ||
+            activity.intent?.getBooleanExtra(
+                "org.appsandgames.datelottogenerator.DEBUG_N12_TEST_BANNER", false
+            ) != true
+        ) return
+        anchorListener = listener
+    }
+
     fun start(content: FrameLayout, webView: WebView) {
         check(Looper.myLooper() == Looper.getMainLooper())
         if (enabled || activity.isDestroyed || activity.isFinishing) return
