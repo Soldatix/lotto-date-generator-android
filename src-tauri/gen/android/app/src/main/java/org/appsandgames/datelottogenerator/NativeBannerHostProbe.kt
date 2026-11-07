@@ -21,7 +21,10 @@ import android.widget.TextView
  *
  * This is NOT a consent flow, SDK initialization or advertising test.
  */
-internal class NativeBannerHostProbe(private val activity: Activity) {
+internal class NativeBannerHostProbe(
+    private val activity: Activity,
+    private val n12OnlyListener: NativeBannerAnchorListener? = null
+) {
     companion object {
         private const val TAG = "DateLottoNativeHost"
         private const val PILOT_PACKAGE =
@@ -207,6 +210,11 @@ internal class NativeBannerHostProbe(private val activity: Activity) {
                 // tablet HTML preview stays completely unchanged by default.
                 if (activity.intent?.getBooleanExtra(EXTRA_NATIVE_ANCHOR, false) == true) {
                     anchored = NativeAnchoredBannerProbe(activity).also {
+                        // N12 is a distinct opt-in debug Activity; production
+                        // keeps its old listener-free path and N3 stays off.
+                        n12OnlyListener?.let { listener ->
+                            it.registerN12IsolatedBannerListener(listener)
+                        }
                         it.start(root, web)
                     }
                 }
