@@ -24,7 +24,7 @@ GROUP = "com.unity3d.ads-mediation"
 ARTIFACT = "mediation-sdk"
 LIFECYCLE_HELPER = "com.ironsource.lifecycle.b"
 ACTIVITY_PROVIDER = "com.ironsource.lifecycle.LevelPlayActivityLifecycleProvider"
-METHOD_DECL = re.compile(r"^  (?:public|private|protected|static|final|synchronized|native|abstract)\b.*\);\s*$")
+METHOD_DECL = re.compile(r"^  \S.*\);\s*$")
 CALL = re.compile(r"//\s+(?:InterfaceMethod|Method)\s+([^\s]+)")
 REFLECTIVE = re.compile(
     r"reflect|Class\.forName|Method\.invoke|System\.loadLibrary|"
@@ -119,6 +119,9 @@ def main() -> None:
                 has_a = any(re.search(r"\ba\(android\.content\.Context\);$", header)
                             for header in all_methods)
                 if not has_d or not has_a:
+                    # Method declarations only; no string constants or user IDs.
+                    for h in all_methods:
+                        print("N11_C_DEBUG_DECLARATION=" + h[:180])
                     raise RuntimeError("N11_C_HELPER_TARGET_SIGNATURE_CHANGED")
                 summarize(cls, all_methods)
             else:
