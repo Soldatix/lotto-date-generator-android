@@ -84,3 +84,17 @@ test('N11-C audits obfuscated provider delegates with pinned AAR and never execu
   assert.match(manifestWorkflow,/inspect_delegated_provider_calls\.py/);
   assert.doesNotMatch(delegateAudit,/adb\s|LevelPlay\.init\(|loadAd\(|requests\.get|urllib\.request|Read-Host/);
 });
+
+test('N11-D only removes pre-consent providers in disposable CI manifest, never production',()=>{
+  for(const marker of [
+    'N11-D simulate debug-only provider suppression in CI sandbox',
+    "ci/android-levelplay-manifest-audit/src/debug/AndroidManifest.xml",
+    'com.ironsource.lifecycle.IronsourceLifecycleProvider',
+    'com.ironsource.lifecycle.LevelPlayActivityLifecycleProvider',
+    "'remove'",
+    'N11_D_PROVIDER_SUPPRESSION_PROXY=PASS',
+    'N11_D_SDK_RUNTIME_COMPATIBILITY=UNVERIFIED',
+    'N11_D_PRODUCTION_MANIFEST=UNCHANGED; SDK_INSTALL=HOLD'
+  ])assert.ok(manifestWorkflow.includes(marker),marker);
+  assert.doesNotMatch(appGradle,/tools:node="remove"|N11_D_PROVIDER_SUPPRESSION/);
+});
