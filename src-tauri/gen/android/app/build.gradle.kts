@@ -21,6 +21,28 @@ val tauriProperties = Properties().apply {
 // startup privacy behavior. No app key or ad unit ID belongs in this file.
 val levelPlaySdkPilot = providers.gradleProperty("appsGamesLevelPlaySdkPilot")
     .orNull?.equals("true", ignoreCase = true) == true
+
+// N7 isolated Google UMP form preview. Excludes LevelPlay/AdQuality entirely.
+// Build-only explicit opt-in; never included in the ordinary or release APK.
+val n7UmpPreview = providers.gradleProperty("appsGamesN7UmpPreview")
+    .orNull?.equals("true", ignoreCase = true) == true
+if (n7UmpPreview && levelPlaySdkPilot) {
+    throw GradleException("N7_UMP_ONLY: LevelPlay cannot run before consent")
+}
+if (n7UmpPreview && gradle.startParameter.taskNames.any {
+        it.contains("release", ignoreCase = true) ||
+        it.contains("publish", ignoreCase = true) ||
+        it.contains("bundle", ignoreCase = true)
+    }) {
+    throw GradleException("N7_PRODUCTION_NO_GO: preview is debug-only")
+}
+val n7AdMobAppId = if (n7UmpPreview)
+    providers.environmentVariable("APPSGAMES_N7_ADMOB_APP_ID").orNull?.trim().orEmpty()
+    else ""
+if (n7UmpPreview &&
+    !Regex("""ca-app-pub-\d{16}~\d{10}""").matches(n7AdMobAppId)) {
+    throw GradleException("N7_PRIVATE_ADMOB_APP_ID_REQUIRED")
+}
 if (levelPlaySdkPilot && gradle.startParameter.taskNames.any {
         it.contains("release", ignoreCase = true) || it.contains("publish", ignoreCase = true)
     }) {
@@ -118,6 +140,11 @@ android {
     if (levelPlaySdkPilot) {
         sourceSets.getByName("main").java.srcDir("src/levelplayPilot/java")
     }
+    if (n7UmpPreview) {
+        sourceSets.getByName("main").java.srcDir("src/n7ConsentPilot/java")
+        sourceSets.getByName("debug").manifest.srcFile("src/n7ConsentPilot/AndroidManifest.xml")
+        buildTypes.getByName("debug").manifestPlaceholders["appsGamesN7AdMobAppId"] = n7AdMobAppId
+    }
 }
 
 kotlin {
@@ -136,6 +163,10 @@ dependencies {
         implementation("com.unity3d.ads-mediation:mediation-sdk:9.5.0")
         // N6: UMP resolves ONLY in disposable opt-in LevelPlay debug source.
         // Normal Android, release and Windows builds remain UMP-free.
+        implementation("com.google.android.ump:user-messaging-platform:4.0.0")
+    }
+    if (n7UmpPreview) {
+        // Consent-only debug activity; deliberately no LevelPlay dependency.
         implementation("com.google.android.ump:user-messaging-platform:4.0.0")
     }
     implementation("androidx.webkit:webkit:1.14.0")
