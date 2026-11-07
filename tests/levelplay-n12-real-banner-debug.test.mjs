@@ -113,3 +113,17 @@ test('N12 authorized runner cannot install on OPPO or touch production app',()=>
   assert.doesNotMatch(oneApproved,/Read-Host|Invoke-WebRequest|Invoke-RestMethod/);
   assert.match(webCi,/N12_HUAWEI_ONE_TEST_POWERSHELL_SYNTAX=PASS/);
 });
+
+test('N12 consent/test controls stay in front of late-creating Tauri WebView',()=>{
+  for (const marker of [
+    'private var testControls: LinearLayout? = null',
+    'private fun keepDebugControlsVisible()',
+    'panel.bringToFront()',
+    'root.postDelayed({ keepDebugControlsVisible() }, 1000L)',
+    'root.postDelayed({ keepDebugControlsVisible() }, 3000L)',
+    'keepDebugControlsVisible()',
+    'topMargin = dp(120)'
+  ]) assert.ok(activity.includes(marker), marker);
+  assert.match(activity, /override fun onAnchorVisible\(bounds: NativeBannerAnchorBounds\)[\s\S]*?keepDebugControlsVisible\(\)/);
+  assert.match(activity, /override fun onResume\(\)[\s\S]*?nativeRoot\?\.post \{ keepDebugControlsVisible\(\) \}/);
+});
