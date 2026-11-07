@@ -14,6 +14,14 @@ android {
     defaultConfig {
         minSdk = 24
     }
+    // N12 is compiled ONLY against this disposable library + a local Tauri
+    // stub. The only valid CI test authorization is permanently FALSE.
+    buildFeatures { buildConfig = true }
+    buildTypes.getByName("debug").buildConfigField(
+        "boolean", "N12_OWNER_TEST_AD_REQUESTS_APPROVED", "false"
+    )
+    buildTypes.getByName("debug").buildConfigField("String", "N12_APP_KEY", "\"\"")
+    buildTypes.getByName("debug").buildConfigField("String", "N12_BANNER_UNIT_ID", "\"\"")
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
