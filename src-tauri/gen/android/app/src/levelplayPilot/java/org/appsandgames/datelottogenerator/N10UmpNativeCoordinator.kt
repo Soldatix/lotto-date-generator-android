@@ -133,8 +133,16 @@ internal class N10UmpNativeCoordinator(
     }
 
     override fun onAnchorReleased() {
+        // A slot disappearing is NOT a new privacy decision.
+        session.anchorHidden()
+        publish()
+    }
+
+    fun onConsentRevoked() {
         session.withdrawn()
         publish()
+        // Any future native SDK owner must destroy a mounted banner too.
+        // This review-only coordinator never holds a LevelPlay view.
     }
 
     fun onPause() {
