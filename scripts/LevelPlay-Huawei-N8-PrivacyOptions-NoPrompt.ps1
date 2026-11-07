@@ -110,14 +110,22 @@ if((Device -Arguments @('shell','getprop','ro.product.model')) -ne 'CMR-W09' -or
 }
 Write-Output 'DEVICE=HUAWEI_CMR-W09_API28_PASS'
 
-# Wait for npm parent process only (Start-Process -Wait could hang on Gradle descendants).
-function RunBuild([string[]]$CommandArgs,[int]$TimeoutMs) {
-    $p=Start-Process -FilePath $npm -ArgumentList $CommandArgs -NoNewWindow -PassThru
-    if(-not $p.WaitForExit($TimeoutMs)){
-        try { $p.Kill() } catch {}
-        throw 'N8_BUILD_PROCESS_TIMEOUT'
+# Invoke npm.cmd directly and capture LASTEXITCODE. On Windows PowerShell 5.1,
+# Start-Process -PassThru may return a null ExitCode for npm.cmd wrappers.
+# -Wait also waits for long-lived Gradle descendants after the parent exits.
+function RunBuild([string[]]$CommandArgs) {
+    $savedPreference=$ErrorActionPreference
+    $nativeExit=$null
+    try {
+        $ErrorActionPreference='Continue'
+        & $npm @CommandArgs
+        $nativeExit=$LASTEXITCODE
+    } finally {
+        $ErrorActionPreference=$savedPreference
     }
-    if($p.ExitCode -ne 0){throw ('N8_NPM_EXIT_'+$p.ExitCode)}
+    if($null -eq $nativeExit -or $nativeExit -ne 0) {
+        throw ('N8_NPM_EXIT_'+[string]$nativeExit)
+    }
 }
 $oldJava=$env:JAVA_HOME; $oldAndroid=$env:ANDROID_HOME; $oldNdk=$env:NDK_HOME
 $oldCi=$env:CI; $oldFlag=$env:ORG_GRADLE_PROJECT_appsGamesN7UmpPreview
@@ -133,10 +141,29 @@ try {
     $privateId=$null
     Push-Location -LiteralPath $repo
     try {
-        Write-Output 'N8_NPM_CI=START'
-        RunBuild -CommandArgs @('ci','--no-audit','--no-fund') -TimeoutMs 600000
-        Write-Output 'N8_NPM_CI=PASS; N8_BUILD=START'
-        RunBuild -CommandArgs @('run','tauri','--','android','build','--debug','--apk','--ci','--target','aarch64') -TimeoutMs 900000
+        # Resume the owner's interrupted N8 temp clone: npm ci already finished.
+        # Only reuse if the install lock marker and Tauri CLI are present and
+        # the marker is newer than the tracked package-lock.json.
+        $rootLock=Join-Path $repo 'package-lock.json'
+        $installedLock=Join-Path $repo 'node_modules\.package-lock.json'
+        $tauriCmd=Join-Path $repo 'node_modules\.bin\tauri.cmd'
+        $reuseDeps=(Test-Path -LiteralPath $rootLock -PathType Leaf) -and
+            (Test-Path -LiteralPath $installedLock -PathType Leaf) -and
+            (Test-Path -LiteralPath $tauriCmd -PathType Leaf) -and
+            ((Get-Item -LiteralPath $installedLock).LastWriteTimeUtc -ge
+             (Get-Item -LiteralPath $rootLock).LastWriteTimeUtc)
+        if($reuseDeps) {
+            Write-Output 'N8_NPM_CI=REUSE_COMPLETED_INSTALL'
+        } else {
+            Write-Output 'N8_NPM_CI=START'
+            RunBuild -CommandArgs @('ci','--no-audit','--no-fund')
+            if(-not (Test-Path -LiteralPath $tauriCmd -PathType Leaf)) {
+                throw 'N8_TAURI_CLI_MISSING_AFTER_NPM_CI'
+            }
+            Write-Output 'N8_NPM_CI=PASS'
+        }
+        Write-Output 'N8_BUILD=START'
+        RunBuild -CommandArgs @('run','tauri','--','android','build','--debug','--apk','--ci','--target','aarch64')
         Write-Output 'N8_APK_BUILD=PASS'
     } finally {Pop-Location}
 } finally {
