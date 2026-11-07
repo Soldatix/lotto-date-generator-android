@@ -57,6 +57,20 @@ internal class N12LottoBannerActivity : TauriActivity(), NativeBannerAnchorListe
     private var consentFormComplete = false
     private var sdkInitialized = false
     private var oneTestAttempted = false
+    // One approved banner request must remain ONE even after Activity/process
+    // restart or after Unity test-mode expires. Store only a boolean in the
+    // isolated .levelplaypilot app; no IDs or consent strings here.
+    private fun alreadyUsedOneApprovedTest(): Boolean =
+        getSharedPreferences("n12_one_approved_banner_test", MODE_PRIVATE)
+            .getBoolean("one_request_used", false)
+
+    private fun consumeOneApprovedTest(): Boolean {
+        if (oneTestAttempted || alreadyUsedOneApprovedTest()) return false
+        val saved = getSharedPreferences("n12_one_approved_banner_test", MODE_PRIVATE)
+            .edit().putBoolean("one_request_used", true).commit()
+        if (saved) oneTestAttempted = true
+        return saved
+    }
     private var sdkInitializing = false
     private var permissionWithdrawn = false
     private var finalized = false
@@ -223,6 +237,7 @@ internal class N12LottoBannerActivity : TauriActivity(), NativeBannerAnchorListe
             BuildConfig.N12_APP_KEY.isNotBlank() &&
             BuildConfig.N12_BANNER_UNIT_ID.isNotBlank() &&
             !sdkInitializing && !sdkInitialized && !oneTestAttempted &&
+            !alreadyUsedOneApprovedTest() &&
             hasExplicitFullTcfOptIn()
     }
 
@@ -237,6 +252,7 @@ internal class N12LottoBannerActivity : TauriActivity(), NativeBannerAnchorListe
             !BuildConfig.N12_OWNER_TEST_AD_REQUESTS_APPROVED ||
             !hasExplicitFullTcfOptIn() ||
             sdkInitialized || sdkInitializing || oneTestAttempted ||
+            alreadyUsedOneApprovedTest() ||
             BuildConfig.N12_APP_KEY.isBlank() || BuildConfig.N12_BANNER_UNIT_ID.isBlank()) return
         sdkInitializing = true
         refreshControls()
@@ -306,8 +322,7 @@ internal class N12LottoBannerActivity : TauriActivity(), NativeBannerAnchorListe
         // the separate build gate was enabled and the user pressed TEST.
         if (ownerDebugOnly() && hasExplicitFullTcfOptIn() &&
             BuildConfig.N12_OWNER_TEST_AD_REQUESTS_APPROVED &&
-            !oneTestAttempted) {
-            oneTestAttempted = true
+            consumeOneApprovedTest()) {
             ad.loadAd()
         } else disableAndDestroyBanner()
     }
