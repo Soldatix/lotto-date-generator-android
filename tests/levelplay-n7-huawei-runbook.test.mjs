@@ -22,3 +22,12 @@ test("N7 uses local-only private Android AdMob app ID and never prints it",()=>{
  assert.match(script,/Get-FileHash/);
  assert.doesNotMatch(script,/294760d25|vu3eqmvs1u5vo6wi|3903782993/);
 });
+
+test("N7 PowerShell helper preserves every external argv item under PS 5.1", () => {
+ assert.doesNotMatch(script,/Invoke-Checked\s+\$(?:git|adb|aapt)\b/);
+ assert.doesNotMatch(script,/\bAdb\s+@\(/);
+ assert.match(script,/Invoke-Checked -exe \$git -argv @\('-C',\$repo,'rev-parse'/);
+ assert.match(script,/Invoke-Checked -exe \$adb -argv \(@\('-s',\$serial\)\+\$cmd\)/);
+ assert.match(script,/Adb -cmd @\('shell','getprop','ro.product.model'\)/);
+ assert.match(script,/Invoke-Checked -exe \$aapt\[0\].FullName -argv @\('dump','badging',\$apk\)/);
+});
