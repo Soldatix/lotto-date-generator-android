@@ -57,17 +57,28 @@ internal class N12LottoBannerActivity : TauriActivity(), NativeBannerAnchorListe
     private var consentFormComplete = false
     private var sdkInitialized = false
     private var oneTestAttempted = false
-    // One approved banner request must remain ONE even after Activity/process
-    // restart or after Unity test-mode expires. Store only a boolean in the
-    // isolated .levelplaypilot app; no IDs or consent strings here.
-    private fun alreadyUsedOneApprovedTest(): Boolean =
+    // Never erase the evidence of the first owner-approved attempt.
+    // A *separate* second approval opens exactly one more test load and
+    // records a different persistent marker. Both markers survive install -r
+    // and process restarts. The second attempt requires firstUsed=true.
+    private fun oneTestPrefs() =
         getSharedPreferences("n12_one_approved_banner_test", MODE_PRIVATE)
-            .getBoolean("one_request_used", false)
+
+    private fun alreadyUsedOneApprovedTest(): Boolean {
+        val prefs = oneTestPrefs()
+        val firstUsed = prefs.getBoolean("one_request_used", false)
+        if (!BuildConfig.N12_SECOND_TEST_ERROR_CODE_APPROVED) return firstUsed
+        return !firstUsed || prefs.getBoolean("second_error_code_request_used", false)
+    }
 
     private fun consumeOneApprovedTest(): Boolean {
         if (oneTestAttempted || alreadyUsedOneApprovedTest()) return false
-        val saved = getSharedPreferences("n12_one_approved_banner_test", MODE_PRIVATE)
-            .edit().putBoolean("one_request_used", true).commit()
+        val name = if (BuildConfig.N12_SECOND_TEST_ERROR_CODE_APPROVED) {
+            "second_error_code_request_used"
+        } else {
+            "one_request_used"
+        }
+        val saved = oneTestPrefs().edit().putBoolean(name, true).commit()
         if (saved) oneTestAttempted = true
         return saved
     }
@@ -374,6 +385,8 @@ internal class N12LottoBannerActivity : TauriActivity(), NativeBannerAnchorListe
             override fun onAdLeftApplication(adInfo: LevelPlayAdInfo) {}
         }
         banner = ad
+        // A single explicit SDK load is authorized, not SDK auto-refresh.
+        ad.pauseAutoRefresh()
         root.addView(ad, FrameLayout.LayoutParams(fit.widthPx, fit.heightPx,
             Gravity.TOP or Gravity.START).apply {
             leftMargin = fit.leftPx
@@ -406,7 +419,7 @@ internal class N12LottoBannerActivity : TauriActivity(), NativeBannerAnchorListe
         // SDK refresh timer on every poll would be incorrect.
         if (ad.visibility != View.VISIBLE) {
             ad.visibility = View.VISIBLE
-            ad.resumeAutoRefresh()
+            // No SDK auto-refresh: approval covers only one explicit loadAd.
         }
     }
 
